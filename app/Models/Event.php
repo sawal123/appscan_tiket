@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EventStatus;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -44,5 +45,15 @@ class Event extends Model
     public function ticketCategories(): HasMany
     {
         return $this->hasMany(TicketCategory::class);
+    }
+
+    /**
+     * Limit the query to events that are currently active.
+     *
+     * @param  Builder<Event>  $query
+     */
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('status', EventStatus::Active->value);
     }
 }

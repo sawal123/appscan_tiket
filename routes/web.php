@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Scanner\ScannerController;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Events as AdminEvents;
 use App\Livewire\Admin\TicketCategories as AdminTicketCategories;
@@ -17,8 +18,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::livewire('admin/ticket-categories', AdminTicketCategories::class)->name('admin.ticket-categories');
 });
 
-Route::view('scanner', 'scanner.index')
-    ->middleware(['auth', 'role:admin,scanner'])
-    ->name('scanner.index');
+Route::middleware(['auth', 'role:admin,scanner'])->prefix('scanner')->group(function () {
+    Route::get('/', [ScannerController::class, 'index'])->name('scanner.index');
+    Route::get('verified', [ScannerController::class, 'verified'])->name('scanner.verified');
+    Route::post('validate', [ScannerController::class, 'validateTicket'])->name('scanner.validate');
+    Route::post('check-in', [ScannerController::class, 'checkIn'])->name('scanner.check-in');
+});
 
 require __DIR__.'/settings.php';

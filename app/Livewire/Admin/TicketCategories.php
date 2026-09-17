@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Event;
 use App\Models\TicketCategory;
+use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -102,7 +103,7 @@ class TicketCategories extends Component
         ];
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.admin.ticket-categories', [
             'events' => Event::query()->orderBy('name')->get(),

@@ -8,7 +8,9 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/scanner.css',
                 'resources/js/app.js',
+                'resources/js/scanner.js',
                 'resources/js/passkeys.js',
             ],
             refresh: true,
