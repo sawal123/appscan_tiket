@@ -11,3 +11,8 @@
 - Prioritizes data safety over features — e.g. avoid hard-deleting records that have relations rather than implementing full delete. Confidence: 0.7
 - Prefers reusable UI built as classless (anonymous) Blade components under `resources/views/components/...` (e.g. `admin/ui/*`, `admin/form/*`) rather than class-based components. Confidence: 0.75
 - Expects Blade components to expose flexible props, keep their slots, and forward extra attributes via `$attributes->merge()` so `wire:model`/`wire:click`, `data-testid`, `aria-*`, and CSS classes still pass through; must stay compatible with Livewire and Alpine. Confidence: 0.75
+- Wants business/domain logic kept out of Blade views and Livewire classes — put it in dedicated service classes (e.g. `app/Services/*`) that controllers/components delegate to. Confidence: 0.8
+- State-changing operations (e.g. ticket check-in) must be concurrency-safe: wrap them in database transactions and guard against double-processing/race conditions (e.g. `lockForUpdate`). Confidence: 0.8
+- Values a clean, extensible Laravel structure with no duplicated logic across layers. Confidence: 0.7
+- When given an existing design with its own plain CSS, preserve that CSS as-is and do not convert it to Tailwind (or introduce a new frontend framework). Confidence: 0.7
+- Splits pages into small, focused Blade components rather than one large Blade file. Confidence: 0.65

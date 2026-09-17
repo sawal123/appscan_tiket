@@ -19,9 +19,16 @@ class TicketFactory extends Factory
      */
     public function definition(): array
     {
+        $code = strtoupper(fake()->unique()->bothify('???-####-#####'));
+
         return [
+            'event_id' => null,
             'ticket_category_id' => TicketCategory::factory(),
-            'code' => strtoupper(fake()->unique()->bothify('???-####-#####')),
+            'code' => $code,
+            'qr_code' => null,
+            'status' => Ticket::STATUS_REGISTERED,
+            'registered_at' => now(),
+            'registered_by' => null,
             'checked_in_at' => null,
             'checked_in_by' => null,
         ];
@@ -32,6 +39,7 @@ class TicketFactory extends Factory
         $checkedInBy = $user?->id;
 
         return $this->state(fn (array $attributes) => [
+            'status' => Ticket::STATUS_CHECKED_IN,
             'checked_in_at' => now(),
             'checked_in_by' => $checkedInBy ?? User::factory(),
         ]);

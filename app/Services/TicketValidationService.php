@@ -26,7 +26,9 @@ class TicketValidationService
         $ticket = Ticket::query()
             ->forActiveEvent()
             ->with(['ticketCategory.event', 'checkedInBy'])
-            ->where('code', $normalized)
+            ->where(function ($query) use ($normalized): void {
+                $query->where('qr_code', $normalized)->orWhere('code', $normalized);
+            })
             ->first();
 
         if (! $ticket) {
@@ -62,7 +64,7 @@ class TicketValidationService
             'status' => $status,
             'code' => $code,
             'category' => $ticket?->ticketCategory?->name,
-            'event' => $ticket?->ticketCategory?->event?->name,
+            'event' => $ticket?->event?->name ?? $ticket?->ticketCategory?->event?->name,
             'checked_in_at' => $checkedInAt?->toIso8601String(),
             'checked_in_date' => $checkedInAt?->translatedFormat('d M Y'),
             'checked_in_time' => $checkedInAt?->format('H:i'),

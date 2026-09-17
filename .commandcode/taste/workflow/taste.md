@@ -7,3 +7,7 @@
 - Stays strictly within the stated task scope; do not audit or refactor unrelated areas, and don't touch already-PASSING auth/role architecture or finished Dashboard design. Confidence: 0.9
 - Dislikes redundant file reads — do not read the same file more than twice; reuse existing context. Confidence: 0.7
 - When tests/migrations fail, reads only the stack trace and relevant error lines rather than the full output. Confidence: 0.7
+- Keeps Laravel Vite as the asset bundler; registers new CSS/JS entry points as Vite inputs and builds them with `npm run build`. Confidence: 0.75
+- Keeps reference/prototype source folders (e.g. `ui_app/`) in place during a migration/slice and only considers deleting them after everything works. Confidence: 0.7
+- Verifies a UI slice against the prototype before finishing — e.g. diffing the prototype's CSS classes against the Blade output, and checking the production bundle size. Confidence: 0.65
+- Does feature work on a dedicated Git branch named with a `feat/` prefix and a snake_case description (e.g. `feat/slicing_app_ui`), commits there rather than to `main`. Confidence: 0.6
