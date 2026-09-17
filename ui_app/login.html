@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Login petugas Ticket Scanner untuk proses check-in event.">
+  <title>Masuk — Ticket Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="login-body" data-page="login">
+  <button class="icon-button login-theme-toggle" type="button" data-theme-toggle data-testid="login-theme-toggle" aria-label="Ganti tema">
+    <i data-lucide="moon" aria-hidden="true"></i>
+  </button>
+
+  <main class="login-shell">
+    <section class="login-panel" aria-labelledby="login-title" data-testid="login-panel">
+      <div class="brand-lockup brand-lockup--login" data-testid="login-brand">
+        <span class="brand-mark" aria-hidden="true"><i data-lucide="scan-line"></i></span>
+        <span>
+          <strong>TICKET SCANNER</strong>
+          <small>Event Check-in System</small>
+        </span>
+      </div>
+
+      <div class="login-heading">
+        <p class="eyebrow" data-testid="login-eyebrow">Akses Petugas</p>
+        <h1 id="login-title" data-testid="login-title">Siap menjaga alur masuk tetap lancar.</h1>
+        <p data-testid="login-description">Masuk menggunakan akun operator yang telah diberikan oleh koordinator event.</p>
+      </div>
+
+      <form class="auth-form" id="loginForm" novalidate data-testid="login-form">
+        <div class="form-field">
+          <label for="identity">Email / Username</label>
+          <div class="input-shell">
+            <i data-lucide="user-round" aria-hidden="true"></i>
+            <input id="identity" name="identity" type="text" autocomplete="username" placeholder="operator@gate.id" data-testid="login-identity-input" required>
+          </div>
+          <span class="field-message" id="identityError" data-testid="login-identity-error"></span>
+        </div>
+
+        <div class="form-field">
+          <label for="password">Password</label>
+          <div class="input-shell">
+            <i data-lucide="lock-keyhole" aria-hidden="true"></i>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Masukkan password" data-testid="login-password-input" required>
+            <button class="input-action" type="button" id="passwordToggle" aria-label="Tampilkan password" data-testid="login-password-toggle">
+              <i data-lucide="eye" aria-hidden="true"></i>
+            </button>
+          </div>
+          <span class="field-message" id="passwordError" data-testid="login-password-error"></span>
+        </div>
+
+        <div class="form-alert" id="loginError" role="alert" aria-live="polite" data-testid="login-error-message" hidden>
+          <i data-lucide="circle-alert" aria-hidden="true"></i>
+          <span>Email atau password tidak sesuai.</span>
+        </div>
+
+        <button class="button button--primary button--large" type="submit" id="loginButton" data-testid="login-submit-button">
+          <span>Masuk</span>
+          <i data-lucide="arrow-right" aria-hidden="true"></i>
+        </button>
+      </form>
+
+      <p class="login-footnote" data-testid="login-security-note">
+        <i data-lucide="shield-check" aria-hidden="true"></i>
+        Sesi operator dilindungi untuk perangkat ini.
+      </p>
+    </section>
+
+    <aside class="login-visual" aria-hidden="true">
+      <div class="gate-lines"></div>
+      <div class="visual-status">
+        <span class="status-signal"></span>
+        <span>Gate A aktif</span>
+      </div>
+      <div class="visual-copy">
+        <span>Music Fest Medan 2026</span>
+        <strong>Check-in cepat.<br>Keputusan jelas.</strong>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true" data-testid="toast-region"></div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

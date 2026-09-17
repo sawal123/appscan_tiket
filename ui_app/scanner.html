@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Scanner QR Ticket untuk petugas gate event.">
+  <title>Scan Tiket — Ticket Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="app-body" data-page="scanner">
+  <header class="app-header" data-testid="app-header">
+    <div class="app-header__inner">
+      <a class="brand-lockup brand-lockup--compact" href="scanner.html" data-testid="header-brand-link" aria-label="Ticket Scanner">
+        <span class="brand-mark" aria-hidden="true"><i data-lucide="scan-line"></i></span>
+        <span><strong>TICKET SCANNER</strong><small>Music Fest 2026</small></span>
+      </a>
+
+      <div class="header-actions">
+        <button class="connection-pill" type="button" id="connectionToggle" data-testid="connection-status-button" aria-label="Ubah simulasi status koneksi">
+          <span class="connection-dot"></span>
+          <span id="connectionLabel" data-testid="connection-status-text">Online</span>
+        </button>
+        <button class="icon-button" type="button" data-theme-toggle data-testid="scanner-theme-toggle" aria-label="Ganti tema"><i data-lucide="moon"></i></button>
+        <button class="avatar-button" type="button" data-testid="profile-button" aria-label="Profil Scanner 02">S2</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="scanner-page">
+    <div class="scanner-workspace">
+      <section class="event-context" aria-labelledby="event-name" data-testid="event-context">
+        <div>
+          <p class="eyebrow" data-testid="event-label">Event Aktif</p>
+          <h1 id="event-name" data-testid="event-name">Music Fest Medan 2026</h1>
+        </div>
+        <dl class="event-meta" data-testid="event-meta">
+          <div><dt><i data-lucide="calendar-days"></i><span class="sr-only">Tanggal</span></dt><dd>17 September 2026</dd></div>
+          <div><dt><i data-lucide="map-pin"></i><span class="sr-only">Gate</span></dt><dd>Gate A</dd></div>
+        </dl>
+      </section>
+
+      <section class="scan-method" aria-labelledby="scan-method-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">Metode Pemindaian</p><h2 id="scan-method-title" data-testid="scan-method-title">Pilih perangkat</h2></div>
+          <button class="text-button" type="button" id="manualOpen" data-testid="manual-input-open-button"><i data-lucide="keyboard"></i> Input manual</button>
+        </div>
+
+        <div class="segmented-control" role="tablist" aria-label="Metode scan" data-testid="scan-method-tabs">
+          <span class="segmented-indicator" aria-hidden="true"></span>
+          <button class="segment is-active" type="button" role="tab" aria-selected="true" data-mode="camera" data-testid="camera-mode-tab"><i data-lucide="camera"></i>Camera</button>
+          <button class="segment" type="button" role="tab" aria-selected="false" data-mode="device" data-testid="device-mode-tab"><i data-lucide="scan-barcode"></i>Scanner Device</button>
+        </div>
+
+        <div class="scanner-stage" data-testid="scanner-stage">
+          <section class="camera-mode" id="cameraMode" aria-label="Pemindai kamera" data-testid="camera-mode-panel">
+            <div class="camera-viewport" id="cameraViewport" data-testid="camera-viewport">
+              <video id="cameraVideo" playsinline muted data-testid="camera-video"></video>
+              <div class="camera-placeholder" id="cameraPlaceholder" data-testid="camera-placeholder">
+                <span class="camera-placeholder__icon"><i data-lucide="camera"></i></span>
+                <strong>Kamera belum aktif</strong>
+                <span>Izinkan akses untuk mulai memindai</span>
+              </div>
+              <div class="scan-overlay" aria-hidden="true">
+                <span class="scan-corner scan-corner--tl"></span><span class="scan-corner scan-corner--tr"></span>
+                <span class="scan-corner scan-corner--bl"></span><span class="scan-corner scan-corner--br"></span>
+                <span class="scan-line"></span>
+              </div>
+              <div class="camera-controls">
+                <button class="camera-control" type="button" id="flashButton" aria-label="Nyalakan lampu" data-testid="flashlight-button"><i data-lucide="flashlight"></i></button>
+                <button class="camera-control" type="button" id="switchCameraButton" aria-label="Ganti kamera" data-testid="switch-camera-button"><i data-lucide="switch-camera"></i></button>
+              </div>
+              <button class="button button--camera" type="button" id="activateCamera" data-testid="activate-camera-button"><i data-lucide="camera"></i>Aktifkan Kamera</button>
+            </div>
+            <div class="scan-instruction" data-testid="camera-instruction">
+              <strong>Arahkan kamera ke QR tiket</strong>
+              <span>QR akan terbaca otomatis</span>
+            </div>
+          </section>
+
+          <section class="device-mode" id="deviceMode" aria-label="Pemindai perangkat" data-testid="device-mode-panel" hidden>
+            <div class="device-ready">
+              <div class="device-ready__icon"><i data-lucide="scan-barcode"></i><span class="pulse-ring"></span></div>
+              <p class="eyebrow">Perangkat Terhubung</p>
+              <h2 data-testid="device-ready-title">Scanner siap</h2>
+              <p data-testid="device-ready-description">Scan QR menggunakan perangkat scanner</p>
+              <label class="scanner-input-shell" for="deviceInput">
+                <i data-lucide="keyboard"></i>
+                <input id="deviceInput" type="text" inputmode="text" autocomplete="off" placeholder="Menunggu QR..." data-testid="hardware-scanner-input">
+                <span class="listening-indicator" aria-label="Input aktif"></span>
+              </label>
+              <small data-testid="device-input-hint">Input otomatis diproses setelah scanner mengirim Enter</small>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="demo-console" aria-labelledby="demo-title" data-testid="demo-console">
+        <div><p class="eyebrow">Prototype Control</p><h2 id="demo-title">Coba kondisi tiket</h2></div>
+        <div class="demo-actions">
+          <button class="demo-chip demo-chip--valid" type="button" data-demo-code="VIP-001" data-testid="demo-valid-vip-button">VIP valid</button>
+          <button class="demo-chip demo-chip--regular" type="button" data-demo-code="REG-001" data-testid="demo-valid-regular-button">Regular valid</button>
+          <button class="demo-chip demo-chip--warning" type="button" data-demo-code="VIP-USED-001" data-testid="demo-used-button">Sudah digunakan</button>
+          <button class="demo-chip demo-chip--danger" type="button" data-demo-code="XZ-99281" data-testid="demo-invalid-button">Tidak ditemukan</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navigasi utama" data-testid="bottom-navigation">
+    <a class="bottom-nav__item is-active" href="scanner.html" aria-current="page" data-testid="nav-scan-link"><i data-lucide="scan-line"></i><span>Scan</span></a>
+    <a class="bottom-nav__item" href="verified.html" data-testid="nav-verified-link"><i data-lucide="badge-check"></i><span>Terverifikasi</span></a>
+  </nav>
+
+  <section class="sheet-backdrop" id="resultBackdrop" data-testid="result-sheet-backdrop" hidden>
+    <article class="ticket-result" id="ticketResult" role="dialog" aria-modal="true" aria-labelledby="resultTitle" data-testid="ticket-result-sheet">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div id="resultContent" data-testid="ticket-result-content"></div>
+    </article>
+  </section>
+
+  <section class="modal-backdrop" id="manualModal" data-testid="manual-input-modal" hidden>
+    <article class="modal-card" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+      <div class="modal-header">
+        <div><p class="eyebrow">Pencarian Tiket</p><h2 id="manualTitle" data-testid="manual-modal-title">Masukkan QR Manual</h2></div>
+        <button class="icon-button" type="button" id="manualClose" aria-label="Tutup input manual" data-testid="manual-modal-close-button"><i data-lucide="x"></i></button>
+      </div>
+      <form id="manualForm" data-testid="manual-qr-form">
+        <div class="form-field">
+          <label for="manualCode">Kode QR</label>
+          <div class="input-shell"><i data-lucide="qr-code"></i><input id="manualCode" type="text" autocomplete="off" placeholder="Contoh: VIP-001" data-testid="manual-qr-input" required></div>
+          <span class="field-message" id="manualError" data-testid="manual-qr-error"></span>
+        </div>
+        <button class="button button--primary button--large" type="submit" data-testid="manual-check-button"><span>Periksa Tiket</span><i data-lucide="arrow-right"></i></button>
+      </form>
+    </article>
+  </section>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true" data-testid="toast-region"></div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

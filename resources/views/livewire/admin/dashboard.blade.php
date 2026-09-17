@@ -5,19 +5,10 @@
     $formattedUnverifiedTickets = number_format($unverifiedTickets);
     $offlineScanners = $maxScanners - $activeScanners;
     $onlineScannerCount = collect($scannerStatuses)->where('status', 'Online')->count();
-    $categoryStyles = [
-        'blue' => [
-            'badge' => 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300',
-            'bar' => 'bg-blue-500',
-        ],
-        'emerald' => [
-            'badge' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
-            'bar' => 'bg-emerald-500',
-        ],
-        'amber' => [
-            'badge' => 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300',
-            'bar' => 'bg-amber-500',
-        ],
+    $categoryBars = [
+        'blue' => 'bg-blue-500',
+        'emerald' => 'bg-emerald-500',
+        'amber' => 'bg-amber-500',
     ];
 @endphp
 
@@ -68,7 +59,7 @@
         </div>
     </section>
 
-    <section data-testid="checkin-progress-section" class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none" aria-labelledby="progress-title">
+    <x-admin.ui.card :overflow="true" data-testid="checkin-progress-section" aria-labelledby="progress-title">
         <div class="grid lg:grid-cols-[1fr_auto]">
             <div class="p-5 sm:p-6">
                 <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -89,11 +80,11 @@
                 <div class="p-4 text-center lg:flex lg:flex-col lg:justify-center"><p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sisa</p><p data-testid="remaining-ticket-value" class="mt-1 text-base font-extrabold text-amber-600 dark:text-amber-400">{{ $formattedUnverifiedTickets }}</p></div>
             </div>
         </div>
-    </section>
+    </x-admin.ui.card>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)]">
         <div class="space-y-6">
-            <section data-testid="ticket-category-section" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/40 sm:p-6 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none" aria-labelledby="category-title">
+            <x-admin.ui.card :padded="true" data-testid="ticket-category-section" aria-labelledby="category-title">
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 id="category-title" class="text-lg font-extrabold">Kategori Tiket</h2>
@@ -106,26 +97,25 @@
                 <div class="mt-6 grid gap-5 md:grid-cols-3 md:gap-0 md:divide-x md:divide-slate-200 dark:md:divide-slate-800">
                     @foreach ($ticketCategories as $category)
                         @php
-                            $style = $categoryStyles[$category['color']];
                             $positionClass = $loop->first ? 'md:pr-5' : ($loop->last ? 'md:pl-5' : 'md:px-5');
                         @endphp
                         <div data-testid="{{ $category['testId'] }}" class="{{ $positionClass }}">
                             <div class="flex items-end justify-between">
                                 <div>
-                                    <span class="inline-flex rounded px-2 py-1 text-[10px] font-extrabold {{ $style['badge'] }}">{{ $category['label'] }}</span>
+                                    <x-admin.ui.badge :variant="$category['color']" size="xs" weight="extrabold" shape="tag">{{ $category['label'] }}</x-admin.ui.badge>
                                     <p class="mt-2 text-sm font-bold">{{ number_format($category['verified']) }} <span class="font-medium text-slate-400">/ {{ number_format($category['total']) }}</span></p>
                                 </div>
                                 <p class="text-lg font-extrabold">{{ $category['percentage'] }}%</p>
                             </div>
                             <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div class="h-full rounded-full {{ $style['bar'] }}" style="width: {{ $category['percentage'] }}%"></div>
+                                <div class="h-full rounded-full {{ $categoryBars[$category['color']] }}" style="width: {{ $category['percentage'] }}%"></div>
                             </div>
                         </div>
                     @endforeach
                 </div>
-            </section>
+            </x-admin.ui.card>
 
-            <section data-testid="recent-verification-section" class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none" aria-labelledby="recent-title">
+            <x-admin.ui.card :overflow="true" data-testid="recent-verification-section" aria-labelledby="recent-title">
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 dark:border-slate-800">
                     <div>
                         <h2 id="recent-title" class="text-lg font-extrabold">Verifikasi Terbaru</h2>
@@ -145,7 +135,7 @@
                                     <td class="px-4 py-3.5"><span class="font-semibold">{{ $verification['category'] }}</span></td>
                                     <td class="px-4 py-3.5 tabular-nums text-slate-500 dark:text-slate-400">{{ $verification['time'] }}</td>
                                     <td class="px-4 py-3.5 font-semibold">{{ $verification['scanner'] }}</td>
-                                    <td class="px-6 py-3.5 text-right"><span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"><span class="size-1.5 rounded-full bg-emerald-500"></span>{{ $verification['status'] }}</span></td>
+                                    <td class="px-6 py-3.5 text-right"><x-admin.ui.badge variant="emerald" dot dot-class="bg-emerald-500">{{ $verification['status'] }}</x-admin.ui.badge></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -159,32 +149,32 @@
                                     <p class="font-extrabold">{{ $verification['qrCode'] }}</p>
                                     <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $verification['category'] }} &middot; {{ $verification['scanner'] }} &middot; {{ $verification['time'] }}</p>
                                 </div>
-                                <span class="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">{{ $verification['status'] }}</span>
+                                <x-admin.ui.badge variant="emerald" size="sm">{{ $verification['status'] }}</x-admin.ui.badge>
                             </div>
                         </article>
                     @endforeach
                 </div>
-            </section>
+            </x-admin.ui.card>
         </div>
 
         <aside class="space-y-6" aria-label="Informasi operasional">
-            <section data-testid="quick-actions-section" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none" aria-labelledby="quick-actions-title">
+            <x-admin.ui.card :padded="true" data-testid="quick-actions-section" aria-labelledby="quick-actions-title">
                 <h2 id="quick-actions-title" class="text-lg font-extrabold">Aksi Cepat</h2>
                 <div class="mt-4 grid grid-cols-2 gap-2.5">
-                    <button data-testid="register-qr-action-button" type="button" class="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-500 dark:hover:bg-blue-500/10"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Registrasi QR</button>
-                    <button data-testid="add-category-action-button" type="button" class="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-500 dark:hover:bg-blue-500/10"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Kategori</button>
-                    <button data-testid="add-scanner-action-button" type="button" class="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-500 dark:hover:bg-blue-500/10"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Scanner</button>
-                    <a href="{{ route('scanner.index') }}" data-testid="open-scanner-action-button" class="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 text-sm font-bold text-white shadow-sm shadow-blue-600/20 hover:bg-blue-700"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3m10 0h3v3M4 17v3h3m10 0h3v-3M7 12h10"/></svg>Buka Scanner</a>
+                    <x-admin.ui.button variant="tile" size="lg" data-testid="register-qr-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Registrasi QR</x-admin.ui.button>
+                    <x-admin.ui.button variant="tile" size="lg" data-testid="add-category-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Kategori</x-admin.ui.button>
+                    <x-admin.ui.button variant="tile" size="lg" data-testid="add-scanner-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Scanner</x-admin.ui.button>
+                    <x-admin.ui.button variant="primary" size="lg" :href="route('scanner.index')" data-testid="open-scanner-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3m10 0h3v3M4 17v3h3m10 0h3v-3M7 12h10"/></svg>Buka Scanner</x-admin.ui.button>
                 </div>
-            </section>
+            </x-admin.ui.card>
 
-            <section data-testid="scanner-status-section" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none" aria-labelledby="scanner-status-title">
+            <x-admin.ui.card :padded="true" data-testid="scanner-status-section" aria-labelledby="scanner-status-title">
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 id="scanner-status-title" class="text-lg font-extrabold">Status Scanner</h2>
                         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">4 gate utama</p>
                     </div>
-                    <span data-testid="scanner-online-count" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">{{ $onlineScannerCount }} Online</span>
+                    <x-admin.ui.badge variant="emerald" data-testid="scanner-online-count">{{ $onlineScannerCount }} Online</x-admin.ui.badge>
                 </div>
                 <div class="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
                     @foreach ($scannerStatuses as $scanner)
@@ -203,7 +193,7 @@
                         </div>
                     @endforeach
                 </div>
-            </section>
+            </x-admin.ui.card>
 
             <section data-testid="active-event-information" class="relative overflow-hidden rounded-lg bg-slate-900 p-5 text-white shadow-sm dark:border dark:border-slate-700" aria-labelledby="event-info-title">
                 <div class="absolute right-2 top-2 size-20 rounded-full border-[14px] border-blue-500/20"></div>
@@ -212,7 +202,7 @@
                 <dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
                     <div><dt class="text-xs text-slate-400">Tanggal</dt><dd data-testid="event-date" class="mt-1 font-bold">{{ $eventDate }}</dd></div>
                     <div><dt class="text-xs text-slate-400">Lokasi</dt><dd data-testid="event-location" class="mt-1 font-bold">{{ $eventLocation }}</dd></div>
-                    <div class="col-span-2 flex items-center justify-between border-t border-slate-700 pt-4"><dt class="text-xs text-slate-400">Status Event</dt><dd data-testid="event-status" class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-extrabold text-emerald-300"><span class="size-1.5 rounded-full bg-emerald-400"></span>AKTIF</dd></div>
+                    <div class="col-span-2 flex items-center justify-between border-t border-slate-700 pt-4"><dt class="text-xs text-slate-400">Status Event</dt><dd data-testid="event-status"><x-admin.ui.badge variant="emerald-solid" weight="extrabold" dot dot-class="bg-emerald-400">AKTIF</x-admin.ui.badge></dd></div>
                 </dl>
             </section>
         </aside>

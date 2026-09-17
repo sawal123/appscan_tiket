@@ -53,7 +53,7 @@
         <x-admin.sidebar />
 
         <div class="min-h-screen lg:pl-[264px]">
-            <x-admin.topbar title="Dashboard" subtitle="Ringkasan aktivitas event hari ini" />
+            <x-admin.topbar :title="$topbarTitle ?? 'Dashboard'" :subtitle="$topbarSubtitle ?? 'Ringkasan aktivitas event hari ini'" />
 
             <main id="dashboard" class="soft-grid px-4 py-6 sm:px-6 sm:py-8 xl:px-8">
                 {{ $slot }}

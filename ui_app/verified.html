@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Daftar tiket yang telah terverifikasi di event aktif.">
+  <title>Tiket Terverifikasi — Ticket Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="app-body" data-page="verified">
+  <header class="app-header" data-testid="app-header">
+    <div class="app-header__inner">
+      <a class="brand-lockup brand-lockup--compact" href="scanner.html" data-testid="header-brand-link" aria-label="Ticket Scanner">
+        <span class="brand-mark" aria-hidden="true"><i data-lucide="scan-line"></i></span>
+        <span><strong>TICKET SCANNER</strong><small>Music Fest 2026</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="connection-pill" data-testid="connection-status"><span class="connection-dot"></span><span data-testid="connection-status-text">Online</span></span>
+        <button class="icon-button" type="button" data-theme-toggle data-testid="verified-theme-toggle" aria-label="Ganti tema"><i data-lucide="moon"></i></button>
+        <button class="avatar-button" type="button" data-testid="profile-button" aria-label="Profil Scanner 02">S2</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="verified-page">
+    <section class="verified-hero" aria-labelledby="verified-title">
+      <div>
+        <p class="eyebrow" data-testid="verified-event-label">Music Fest Medan 2026 · Gate A</p>
+        <h1 id="verified-title" data-testid="verified-page-title">Tiket Terverifikasi</h1>
+        <p class="verified-count" id="verifiedCount" data-testid="verified-ticket-count">0 tiket telah masuk</p>
+      </div>
+      <a class="button button--primary verified-scan-button" href="scanner.html" data-testid="verified-scan-ticket-link"><i data-lucide="scan-line"></i>Scan tiket</a>
+    </section>
+
+    <section class="verified-tools" aria-label="Pencarian dan filter tiket">
+      <label class="search-shell" for="ticketSearch">
+        <i data-lucide="search"></i>
+        <input id="ticketSearch" type="search" autocomplete="off" placeholder="Cari kode QR..." data-testid="verified-search-input">
+        <kbd>⌘ K</kbd>
+      </label>
+
+      <div class="filter-row" role="group" aria-label="Filter kategori" data-testid="verified-filter-group">
+        <button class="filter-chip is-active" type="button" data-filter="Semua" data-testid="filter-all-button">Semua</button>
+        <button class="filter-chip" type="button" data-filter="VIP" data-testid="filter-vip-button">VIP</button>
+        <button class="filter-chip" type="button" data-filter="Regular" data-testid="filter-regular-button">Regular</button>
+        <button class="filter-chip" type="button" data-filter="VVIP" data-testid="filter-vvip-button">VVIP</button>
+      </div>
+    </section>
+
+    <section class="ticket-list-section" aria-labelledby="list-title">
+      <div class="list-header">
+        <h2 id="list-title" data-testid="verified-list-title">Check-in terbaru</h2>
+        <button class="text-button text-button--muted" id="clearTickets" type="button" data-testid="clear-verified-list-button"><i data-lucide="trash-2"></i>Kosongkan demo</button>
+      </div>
+
+      <div class="ticket-table-head" aria-hidden="true">
+        <span>Tiket</span><span>Waktu</span><span>Gate</span><span>Status</span>
+      </div>
+      <div class="verified-list" id="verifiedList" data-testid="verified-ticket-list"></div>
+
+      <div class="empty-state" id="emptyState" data-testid="verified-empty-state" hidden>
+        <span class="empty-state__icon"><i data-lucide="ticket-check"></i></span>
+        <h2 data-testid="empty-state-title">Belum Ada Tiket Terverifikasi</h2>
+        <p data-testid="empty-state-description">Tiket yang berhasil check-in akan muncul di sini.</p>
+        <a class="button button--primary" href="scanner.html" data-testid="empty-start-scan-link"><i data-lucide="scan-line"></i>Mulai Scan</a>
+        <button class="text-button" type="button" id="restoreTickets" data-testid="restore-demo-list-button">Pulihkan data demo</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Navigasi utama" data-testid="bottom-navigation">
+    <a class="bottom-nav__item" href="scanner.html" data-testid="nav-scan-link"><i data-lucide="scan-line"></i><span>Scan</span></a>
+    <a class="bottom-nav__item is-active" href="verified.html" aria-current="page" data-testid="nav-verified-link"><i data-lucide="badge-check"></i><span>Terverifikasi</span></a>
+  </nav>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true" data-testid="toast-region"></div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
