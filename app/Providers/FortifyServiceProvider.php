@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\Event;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -58,7 +59,9 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureViews(): void
     {
-        Fortify::loginView(fn () => view('livewire.auth.login'));
+        Fortify::loginView(fn () => view('auth.login', [
+            'activeEvent' => Event::query()->active()->orderByDesc('event_date')->first(),
+        ]));
         Fortify::verifyEmailView(fn () => view('livewire.auth.verify-email'));
         Fortify::twoFactorChallengeView(fn () => view('livewire.auth.two-factor-challenge'));
         Fortify::confirmPasswordView(fn () => view('livewire.auth.confirm-password'));

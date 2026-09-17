@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Enums\EventStatus;
 use App\Models\Event;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -138,7 +139,7 @@ class Events extends Component
         ];
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.admin.events', [
             'events' => Event::query()
