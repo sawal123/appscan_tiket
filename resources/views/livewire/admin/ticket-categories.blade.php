@@ -61,7 +61,7 @@
                                 </td>
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center justify-end gap-2">
-                                        <x-admin.ui.button variant="outline" size="icon" wire:click="toggleActive({{ $category->id }})" data-testid="toggle-ticket-category-{{ $category->id }}" :aria-label="$category->is_active ? 'Nonaktifkan kategori' : 'Aktifkan kategori'" :title="$category->is_active ? 'Nonaktifkan' : 'Aktifkan'">
+                                        <x-admin.ui.button variant="outline" size="icon" wire:click="toggleActive({{ $category->id }})" target="toggleActive({{ $category->id }})" data-testid="toggle-ticket-category-{{ $category->id }}" :aria-label="$category->is_active ? 'Nonaktifkan kategori' : 'Aktifkan kategori'" :title="$category->is_active ? 'Nonaktifkan' : 'Aktifkan'">
                                             @if ($category->is_active)
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg>
                                                 <span class="sr-only">Nonaktifkan</span>
@@ -70,7 +70,7 @@
                                                 <span class="sr-only">Aktifkan</span>
                                             @endif
                                         </x-admin.ui.button>
-                                        <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $category->id }})" data-testid="edit-ticket-category-{{ $category->id }}" aria-label="Edit kategori" title="Edit">
+                                        <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $category->id }})" target="edit({{ $category->id }})" data-testid="edit-ticket-category-{{ $category->id }}" aria-label="Edit kategori" title="Edit">
                                             <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                             <span class="sr-only">Edit</span>
                                         </x-admin.ui.button>
@@ -97,7 +97,7 @@
                             <x-admin.ui.badge :variant="$category->is_active ? $statusVariants['active'] : $statusVariants['inactive']" size="sm" class="shrink-0">{{ $category->is_active ? 'Aktif' : 'Nonaktif' }}</x-admin.ui.badge>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <x-admin.ui.button variant="outline" size="icon" wire:click="toggleActive({{ $category->id }})" :aria-label="$category->is_active ? 'Nonaktifkan kategori' : 'Aktifkan kategori'" :title="$category->is_active ? 'Nonaktifkan' : 'Aktifkan'">
+                            <x-admin.ui.button variant="outline" size="icon" wire:click="toggleActive({{ $category->id }})" target="toggleActive({{ $category->id }})" :aria-label="$category->is_active ? 'Nonaktifkan kategori' : 'Aktifkan kategori'" :title="$category->is_active ? 'Nonaktifkan' : 'Aktifkan'">
                                 @if ($category->is_active)
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><path d="M12 2v10"/></svg>
                                     <span class="sr-only">Nonaktifkan</span>
@@ -106,7 +106,7 @@
                                     <span class="sr-only">Aktifkan</span>
                                 @endif
                             </x-admin.ui.button>
-                            <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $category->id }})" aria-label="Edit kategori" title="Edit">
+                            <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $category->id }})" target="edit({{ $category->id }})" aria-label="Edit kategori" title="Edit">
                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                 <span class="sr-only">Edit</span>
                             </x-admin.ui.button>
@@ -152,7 +152,7 @@
 
             <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <x-admin.ui.button variant="outline" wire:click="closeModal">Batal</x-admin.ui.button>
-                <x-admin.ui.button type="submit" data-testid="ticket-category-submit-button">Simpan</x-admin.ui.button>
+                <x-admin.ui.button type="submit" target="save" data-testid="ticket-category-submit-button">Simpan</x-admin.ui.button>
             </div>
         </form>
     </x-admin.ui.modal>

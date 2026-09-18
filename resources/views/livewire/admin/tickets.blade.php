@@ -18,9 +18,9 @@
                 <h2 data-testid="tickets-heading" class="mt-1 text-2xl font-extrabold text-slate-950 dark:text-white">Daftar Tiket</h2>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Kelola QR ticket per event dan kategori.</p>
             </div>
-            <x-admin.ui.button wire:click="create" data-testid="create-ticket-button">
+            <x-admin.ui.button :href="route('admin.tickets.create')" data-testid="create-ticket-button">
                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                Tambah Tiket
+                Registrasi QR
             </x-admin.ui.button>
         </div>
 
@@ -60,7 +60,7 @@
                     data-testid="ticket-import-file-input"
                 />
 
-                <x-admin.ui.button type="submit" class="w-full lg:w-auto" data-testid="ticket-import-submit-button">
+                <x-admin.ui.button type="submit" target="import" class="w-full lg:w-auto" data-testid="ticket-import-submit-button">
                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                     Import
                 </x-admin.ui.button>
@@ -191,49 +191,4 @@
             </div>
         </x-admin.ui.card>
     </div>
-
-    <x-admin.ui.modal
-        id="ticket-modal"
-        title="Tambah Tiket"
-        subtitle="Tiket wajib terkait dengan event dan kategori."
-        title-test-id="ticket-modal-title"
-    >
-        <form wire:submit="save" class="mt-5 space-y-4">
-            <x-admin.form.select
-                label="Event"
-                id="ticket-event"
-                wire:model.live="event_id"
-                data-testid="ticket-event-input"
-            >
-                <option value="">Pilih Event</option>
-                @foreach ($events as $eventOption)
-                    <option value="{{ $eventOption->id }}">{{ $eventOption->name }}</option>
-                @endforeach
-            </x-admin.form.select>
-
-            <x-admin.form.select
-                label="Kategori"
-                id="ticket-category"
-                wire:model="ticket_category_id"
-                data-testid="ticket-category-input"
-            >
-                <option value="">Pilih Kategori</option>
-                @foreach ($categories as $categoryOption)
-                    <option value="{{ $categoryOption->id }}">{{ $categoryOption->name }}</option>
-                @endforeach
-            </x-admin.form.select>
-
-            <x-admin.form.input
-                label="QR Code"
-                id="ticket-qr-code"
-                wire:model="qr_code"
-                data-testid="ticket-qr-code-input"
-            />
-
-            <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
-                <x-admin.ui.button variant="outline" wire:click="closeModal">Batal</x-admin.ui.button>
-                <x-admin.ui.button type="submit" data-testid="ticket-submit-button">Simpan</x-admin.ui.button>
-            </div>
-        </form>
-    </x-admin.ui.modal>
 </div>
