@@ -88,7 +88,7 @@ class ScannerController extends Controller
     }
 
     /**
-     * @return array{scannerName: string, scannerInitials: string}
+     * @return array{scannerName: string, scannerInitials: string, scannerRole: string}
      */
     private function scannerContext(): array
     {
@@ -98,12 +98,14 @@ class ScannerController extends Controller
             return [
                 'scannerName' => 'Scanner',
                 'scannerInitials' => 'S',
+                'scannerRole' => 'Scanner',
             ];
         }
 
         return [
             'scannerName' => $user->name,
             'scannerInitials' => $user->initials(),
+            'scannerRole' => ucfirst($user->role->value),
         ];
     }
 }

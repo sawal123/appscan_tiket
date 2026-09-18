@@ -92,6 +92,10 @@ svg { display: block; width: 20px; height: 20px; stroke-width: 1.8; }
 .icon-button:hover, .camera-control:hover, .input-action:hover { background: var(--surface-soft); border-color: var(--border-strong); }
 .icon-button:active, .avatar-button:active, .camera-control:active, .input-action:active { transform: scale(.96); }
 .avatar-button { background: var(--primary); border-color: transparent; color: var(--primary-contrast); font-size: 12px; font-weight: 800; }
+.scanner-identity { display: flex; min-width: 0; align-items: center; gap: 10px; }
+.scanner-identity__meta { display: flex; min-width: 0; flex-direction: column; line-height: 1.25; }
+.scanner-identity__meta strong { overflow: hidden; max-width: 150px; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 800; }
+.scanner-identity__meta small { color: var(--text-secondary); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .text-button { display: inline-flex; min-height: 44px; padding: 0 2px; align-items: center; gap: 7px; border: 0; background: transparent; color: var(--primary); font-size: 13px; font-weight: 700; transition: color 180ms var(--ease), transform 180ms var(--ease); }
 .text-button svg { width: 17px; height: 17px; }
 .text-button:hover { color: var(--primary-hover); }
@@ -213,6 +217,7 @@ button.connection-pill:active { transform: scale(.97); }
 .device-mode { min-height: 396px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-sm); }
 .device-ready { display: flex; min-height: 396px; padding: 38px; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
 .device-ready__icon { position: relative; display: grid; width: 78px; height: 78px; margin-bottom: 23px; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--success-soft); color: var(--success); }
+.device-ready__icon--warning { background: var(--warning-soft); color: var(--warning); }
 .device-ready__icon svg { width: 34px; height: 34px; }
 .pulse-ring { position: absolute; inset: -1px; border: 1px solid var(--success); border-radius: 50%; animation: readyPulse 2s ease-out infinite; }
 .device-ready h2 { margin: 0; font-size: 25px; }
@@ -350,6 +355,7 @@ button.connection-pill:active { transform: scale(.97); }
   .brand-lockup--compact small { font-size: 9px; }
   .connection-pill { min-width: 40px; padding: 0 11px; }
   .connection-pill span:last-child { display: none; }
+  .scanner-identity__meta { display: none; }
   .scanner-page { width: calc(100% - 24px); padding-top: 24px; }
   .scanner-workspace { gap: 24px; }
   .event-context { display: grid; gap: 12px; }
