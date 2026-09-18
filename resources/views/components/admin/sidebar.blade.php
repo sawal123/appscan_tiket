@@ -21,16 +21,9 @@
         [
             'label' => 'Registrasi QR',
             'href' => route('admin.tickets'),
-            'active' => request()->routeIs('admin.tickets'),
+            'active' => request()->routeIs('admin.tickets', 'admin.tickets.create'),
             'testId' => 'nav-qr-registration-link',
             'icon' => 'registration',
-        ],
-        [
-            'label' => 'Tiket',
-            'href' => route('admin.tickets'),
-            'active' => request()->routeIs('admin.tickets'),
-            'testId' => 'nav-tickets-link',
-            'icon' => 'tickets',
         ],
         [
             'label' => 'Kategori Tiket',
@@ -97,10 +90,6 @@
 
                             @case('registration')
                                 <svg aria-hidden="true" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5a2 2 0 0 1 2-2h4v6H3V5Zm12-2h4a2 2 0 0 1 2 2v4h-6V3ZM3 15h6v6H5a2 2 0 0 1-2-2v-4Zm12 0h2v2h-2zm4 0h2v6h-6v-2h4zM15 3v6h6"/><path d="M12 5v14M5 12h14"/></svg>
-                                @break
-
-                            @case('tickets')
-                                <svg aria-hidden="true" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 0 0 6v4h20v-4a3 3 0 0 0 0-6V5H2v4Z"/><path d="M13 5v2m0 4v2m0 4v2"/></svg>
                                 @break
 
                             @case('categories')

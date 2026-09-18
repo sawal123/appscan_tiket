@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Admin\TicketCreate;
 use App\Livewire\Admin\Tickets;
 use App\Models\Event;
 use App\Models\Ticket;
@@ -36,8 +37,7 @@ test('admin bisa create ticket', function () {
     $event = Event::factory()->create();
     $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
 
-    Livewire::test(Tickets::class)
-        ->call('create')
+    Livewire::test(TicketCreate::class)
         ->set('event_id', $event->id)
         ->set('ticket_category_id', $category->id)
         ->set('qr_code', 'abc001')
@@ -63,8 +63,7 @@ test('duplicate QR ditolak', function () {
         'qr_code' => 'ABC001',
     ]);
 
-    Livewire::test(Tickets::class)
-        ->call('create')
+    Livewire::test(TicketCreate::class)
         ->set('event_id', $event->id)
         ->set('ticket_category_id', $category->id)
         ->set('qr_code', 'ABC001')

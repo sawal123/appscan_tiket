@@ -16,3 +16,7 @@
 - Values a clean, extensible Laravel structure with no duplicated logic across layers. Confidence: 0.7
 - When given an existing design with its own plain CSS, preserve that CSS as-is and do not convert it to Tailwind (or introduce a new frontend framework). Confidence: 0.7
 - Splits pages into small, focused Blade components rather than one large Blade file. Confidence: 0.65
+- For statistics/dashboards, requires efficient DB access: use SQL aggregate/`GROUP BY` queries, never load full tables into memory, eager-load only when needed, and do not add caching unless asked. Confidence: 0.75
+- Avoids adding realtime/websocket features, chart libraries, APIs, or export functionality unless explicitly requested; prefers server-rendered aggregate data. Confidence: 0.7
+- For QR/barcode scanning, reuses the project's established approach: the browser-native `BarcodeDetector` for camera scanning and treating USB/Bluetooth 2D scanners as keyboard input (Enter submits) — no new scanning libraries and no custom Bluetooth/device integrations. Confidence: 0.7
+- Prefers dedicated routed pages (e.g. `admin.tickets.create`) over modals for structured create/registration flows that involve multiple inputs or a scanner step. Confidence: 0.6

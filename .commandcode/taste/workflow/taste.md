@@ -10,5 +10,6 @@
 - Keeps Laravel Vite as the asset bundler; registers new CSS/JS entry points as Vite inputs and builds them with `npm run build`. Confidence: 0.75
 - Keeps reference/prototype source folders (e.g. `ui_app/`) in place during a migration/slice and only considers deleting them after everything works. Confidence: 0.7
 - Verifies a UI slice against the prototype before finishing — e.g. diffing the prototype's CSS classes against the Blade output, and checking the production bundle size. Confidence: 0.65
-- Does feature work on a dedicated Git branch named with a `feat/` prefix plus a short lowercase description (e.g. `feat/slicing_app_ui`, `feat/checkin`), commits there rather than to `main`. Confidence: 0.6
-- When starting feature work, expects the branch to come off an up-to-date `main`: switch to `main`, `git pull`, then create the feature branch from it, then push with upstream tracking. Confidence: 0.6
+- Does feature work on a dedicated Git branch named with a `feat/` prefix plus a short lowercase description (e.g. `feat/slicing_app_ui`, `feat/checkin`, `feat/dashboard`), commits there rather than to `main`. Confidence: 0.75
+- When starting feature work (or after finishing a slice), expects the branch to come off an up-to-date `main`: switch to `main`, `git pull`, then create the feature branch from it, then push with upstream tracking. Confidence: 0.8
+- Prefers fast-forward-only pulls (e.g. `git pull --ff-only origin main`) to keep history linear and avoid unintended merge commits. Confidence: 0.7
