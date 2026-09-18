@@ -27,6 +27,10 @@ class EnsureUserHasRole
 
         abort_unless(in_array($user->role->value, $allowedRoles, true), 403);
 
+        // Deactivated scanners lose access to the scanner area. Admins are never
+        // gated by is_active.
+        abort_if($user->isScanner() && ! $user->is_active, 403);
+
         return $next($request);
     }
 }

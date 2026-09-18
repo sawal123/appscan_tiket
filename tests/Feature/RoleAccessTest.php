@@ -84,4 +84,46 @@ class RoleAccessTest extends TestCase
         $this->assertTrue($user->isScanner());
         $this->assertFalse($user->isAdmin());
     }
+
+    public function test_inactive_scanner_cannot_access_scanner(): void
+    {
+        $this->actingAs(User::factory()->scanner()->create(['is_active' => false]))
+            ->get('/scanner')
+            ->assertForbidden();
+    }
+
+    public function test_inactive_scanner_cannot_access_other_scanner_routes(): void
+    {
+        $inactive = User::factory()->scanner()->create(['is_active' => false]);
+
+        $this->actingAs($inactive)
+            ->get('/scanner/verified')
+            ->assertForbidden();
+
+        $this->actingAs($inactive)
+            ->postJson(route('scanner.validate'), ['code' => 'ANY-001'])
+            ->assertForbidden();
+
+        $this->actingAs($inactive)
+            ->postJson(route('scanner.check-in'), ['code' => 'ANY-001'])
+            ->assertForbidden();
+    }
+
+    public function test_active_scanner_is_not_affected(): void
+    {
+        $this->actingAs(User::factory()->scanner()->create(['is_active' => true]))
+            ->get('/scanner')
+            ->assertOk();
+    }
+
+    public function test_admin_is_not_affected_by_inactive_status(): void
+    {
+        $this->actingAs(User::factory()->admin()->create(['is_active' => false]))
+            ->get('/admin/dashboard')
+            ->assertOk();
+
+        $this->actingAs(User::factory()->admin()->create(['is_active' => false]))
+            ->get('/scanner')
+            ->assertOk();
+    }
 }

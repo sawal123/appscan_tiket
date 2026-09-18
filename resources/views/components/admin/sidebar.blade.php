@@ -32,7 +32,13 @@
             'testId' => 'nav-ticket-categories-link',
             'icon' => 'categories',
         ],
-        ['label' => 'User Scanner', 'href' => '#scanner', 'testId' => 'nav-scanner-users-link', 'icon' => 'scanner'],
+        [
+            'label' => 'User Scanner',
+            'href' => route('admin.scanners'),
+            'active' => request()->routeIs('admin.scanners', 'admin.scanners.create'),
+            'testId' => 'nav-scanner-users-link',
+            'icon' => 'scanner',
+        ],
         [
             'label' => 'Riwayat Check-in',
             'href' => route('admin.check-in-history'),
