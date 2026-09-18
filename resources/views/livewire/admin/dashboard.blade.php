@@ -1,14 +1,37 @@
 @php
-    $checkInPercentage = $this->checkInPercentage;
+    $statistics = $this->statistics;
+    $eventInformation = $this->eventInformation;
+    $ticketCategories = $this->ticketCategories;
+    $recentCheckIns = $this->recentCheckIns;
+    $scannerUsers = $this->scannerUsers;
+
+    $checkInPercentage = $statistics['checkedInPercentage'];
+    $remainingPercentage = $statistics['remainingPercentage'];
+    $totalTickets = $statistics['total'];
+    $verifiedTickets = $statistics['checkedIn'];
+    $unverifiedTickets = $statistics['remaining'];
+    $scannerCount = count($scannerUsers);
+
     $formattedTotalTickets = number_format($totalTickets);
     $formattedVerifiedTickets = number_format($verifiedTickets);
     $formattedUnverifiedTickets = number_format($unverifiedTickets);
-    $offlineScanners = $maxScanners - $activeScanners;
-    $onlineScannerCount = collect($scannerStatuses)->where('status', 'Online')->count();
+
     $categoryBars = [
         'blue' => 'bg-blue-500',
         'emerald' => 'bg-emerald-500',
         'amber' => 'bg-amber-500',
+    ];
+
+    $checkInStatusVariants = [
+        'success' => 'emerald',
+        'already_checked_in' => 'amber',
+        'invalid' => 'red',
+    ];
+
+    $checkInStatusLabels = [
+        'success' => 'Success',
+        'already_checked_in' => 'Already Checked In',
+        'invalid' => 'Invalid',
     ];
 @endphp
 
@@ -43,15 +66,15 @@
             <x-admin.stat-card
                 title="Belum Diverifikasi"
                 :value="$formattedUnverifiedTickets"
-                subtitle="{{ number_format(($unverifiedTickets / $totalTickets) * 100, 1) }}% tersisa"
+                subtitle="{{ $remainingPercentage }}% tersisa"
                 icon="clock"
                 accent="amber"
                 test-id="unverified-stat-card"
             />
             <x-admin.stat-card
                 title="Scanner Aktif"
-                value="{{ $activeScanners }} <span class=&quot;text-base text-slate-400&quot;>/ {{ $maxScanners }}</span>"
-                subtitle="{{ $offlineScanners }} perangkat offline"
+                :value="$scannerCount"
+                subtitle="{{ $scannerCount }} akun scanner"
                 icon="scanner"
                 accent="indigo"
                 test-id="active-scanner-stat-card"
@@ -94,34 +117,38 @@
                         <svg aria-hidden="true" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 2 4 4-4 4-4-4 4-4ZM6 14l4 4-4 4-4-4 4-4Zm12 0 4 4-4 4-4-4 4-4Z"/></svg>
                     </span>
                 </div>
-                <div class="mt-6 grid gap-5 md:grid-cols-3 md:gap-0 md:divide-x md:divide-slate-200 dark:md:divide-slate-800">
-                    @foreach ($ticketCategories as $category)
-                        @php
-                            $positionClass = $loop->first ? 'md:pr-5' : ($loop->last ? 'md:pl-5' : 'md:px-5');
-                        @endphp
-                        <div data-testid="{{ $category['testId'] }}" class="{{ $positionClass }}">
-                            <div class="flex items-end justify-between">
-                                <div>
-                                    <x-admin.ui.badge :variant="$category['color']" size="xs" weight="extrabold" shape="tag">{{ $category['label'] }}</x-admin.ui.badge>
-                                    <p class="mt-2 text-sm font-bold">{{ number_format($category['verified']) }} <span class="font-medium text-slate-400">/ {{ number_format($category['total']) }}</span></p>
+                @if ($ticketCategories === [])
+                    <p data-testid="ticket-category-empty" class="mt-6 text-sm text-slate-500 dark:text-slate-400">Belum ada kategori tiket pada event aktif.</p>
+                @else
+                    <div class="mt-6 grid gap-5 md:grid-cols-3 md:gap-0 md:divide-x md:divide-slate-200 dark:md:divide-slate-800">
+                        @foreach ($ticketCategories as $category)
+                            @php
+                                $positionClass = $loop->first ? 'md:pr-5' : ($loop->last ? 'md:pl-5' : 'md:px-5');
+                            @endphp
+                            <div data-testid="{{ $category['testId'] }}" class="{{ $positionClass }}">
+                                <div class="flex items-end justify-between">
+                                    <div>
+                                        <x-admin.ui.badge :variant="$category['color']" size="xs" weight="extrabold" shape="tag">{{ $category['label'] }}</x-admin.ui.badge>
+                                        <p class="mt-2 text-sm font-bold">{{ number_format($category['checkedIn']) }} <span class="font-medium text-slate-400">/ {{ number_format($category['total']) }}</span></p>
+                                    </div>
+                                    <p class="text-lg font-extrabold">{{ $category['percentage'] }}%</p>
                                 </div>
-                                <p class="text-lg font-extrabold">{{ $category['percentage'] }}%</p>
+                                <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                    <div class="h-full rounded-full {{ $categoryBars[$category['color']] }}" style="width: {{ $category['percentage'] }}%"></div>
+                                </div>
                             </div>
-                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                                <div class="h-full rounded-full {{ $categoryBars[$category['color']] }}" style="width: {{ $category['percentage'] }}%"></div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
+                        @endforeach
+                    </div>
+                @endif
             </x-admin.ui.card>
 
             <x-admin.ui.card :overflow="true" data-testid="recent-verification-section" aria-labelledby="recent-title">
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 dark:border-slate-800">
                     <div>
                         <h2 id="recent-title" class="text-lg font-extrabold">Verifikasi Terbaru</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Aktivitas masuk secara real-time</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">10 aktivitas check-in terakhir</p>
                     </div>
-                    <a href="#riwayat" data-testid="view-all-verifications-link" class="inline-flex min-h-10 items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Lihat Semua<svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+                    <a href="{{ route('admin.check-in-history') }}" data-testid="view-all-verifications-link" class="inline-flex min-h-10 items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Lihat Semua<svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
                 </div>
                 <div class="hidden overflow-x-auto md:block">
                     <table class="w-full text-left text-sm">
@@ -129,30 +156,34 @@
                             <tr><th class="px-6 py-3">QR Code</th><th class="px-4 py-3">Kategori</th><th class="px-4 py-3">Waktu</th><th class="px-4 py-3">Scanner</th><th class="px-6 py-3 text-right">Status</th></tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                            @foreach ($recentVerifications as $verification)
-                                <tr data-testid="verification-row-{{ strtolower($verification['qrCode']) }}" class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
-                                    <td class="px-6 py-3.5 font-extrabold">{{ $verification['qrCode'] }}</td>
-                                    <td class="px-4 py-3.5"><span class="font-semibold">{{ $verification['category'] }}</span></td>
-                                    <td class="px-4 py-3.5 tabular-nums text-slate-500 dark:text-slate-400">{{ $verification['time'] }}</td>
-                                    <td class="px-4 py-3.5 font-semibold">{{ $verification['scanner'] }}</td>
-                                    <td class="px-6 py-3.5 text-right"><x-admin.ui.badge variant="emerald" dot dot-class="bg-emerald-500">{{ $verification['status'] }}</x-admin.ui.badge></td>
+                            @forelse ($recentCheckIns as $checkIn)
+                                <tr data-testid="recent-check-in-row-{{ $checkIn['id'] }}" class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                                    <td class="px-6 py-3.5 font-extrabold">{{ $checkIn['qrCode'] }}</td>
+                                    <td class="px-4 py-3.5"><span class="font-semibold">{{ $checkIn['category'] }}</span></td>
+                                    <td class="px-4 py-3.5 tabular-nums text-slate-500 dark:text-slate-400">{{ $checkIn['time'] }}</td>
+                                    <td class="px-4 py-3.5 font-semibold">{{ $checkIn['scanner'] }}</td>
+                                    <td class="px-6 py-3.5 text-right"><x-admin.ui.badge :variant="$checkInStatusVariants[$checkIn['status']] ?? 'slate'" dot>{{ $checkInStatusLabels[$checkIn['status']] ?? $checkIn['status'] }}</x-admin.ui.badge></td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr><td colspan="5" class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada aktivitas check-in.</td></tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
                 <div class="divide-y divide-slate-100 md:hidden dark:divide-slate-800">
-                    @foreach ($recentVerifications as $verification)
-                        <article data-testid="mobile-verification-card-{{ strtolower($verification['qrCode']) }}" class="p-4">
+                    @forelse ($recentCheckIns as $checkIn)
+                        <article data-testid="mobile-recent-check-in-card-{{ $checkIn['id'] }}" class="p-4">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="font-extrabold">{{ $verification['qrCode'] }}</p>
-                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $verification['category'] }} &middot; {{ $verification['scanner'] }} &middot; {{ $verification['time'] }}</p>
+                                    <p class="font-extrabold">{{ $checkIn['qrCode'] }}</p>
+                                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $checkIn['category'] }} &middot; {{ $checkIn['scanner'] }} &middot; {{ $checkIn['time'] }}</p>
                                 </div>
-                                <x-admin.ui.badge variant="emerald" size="sm">{{ $verification['status'] }}</x-admin.ui.badge>
+                                <x-admin.ui.badge :variant="$checkInStatusVariants[$checkIn['status']] ?? 'slate'" size="sm">{{ $checkInStatusLabels[$checkIn['status']] ?? $checkIn['status'] }}</x-admin.ui.badge>
                             </div>
                         </article>
-                    @endforeach
+                    @empty
+                        <p class="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada aktivitas check-in.</p>
+                    @endforelse
                 </div>
             </x-admin.ui.card>
         </div>
@@ -172,36 +203,33 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 id="scanner-status-title" class="text-lg font-extrabold">Status Scanner</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">4 gate utama</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $scannerCount }} akun scanner</p>
                     </div>
-                    <x-admin.ui.badge variant="emerald" data-testid="scanner-online-count">{{ $onlineScannerCount }} Online</x-admin.ui.badge>
+                    <x-admin.ui.badge variant="emerald" data-testid="scanner-online-count">{{ $scannerCount }} Scanner</x-admin.ui.badge>
                 </div>
                 <div class="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
-                    @foreach ($scannerStatuses as $scanner)
-                        @php($isOnline = $scanner['status'] === 'Online')
-                        <div data-testid="{{ $scanner['testId'] }}" class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                            @if ($loop->first && $isOnline)
-                                <span class="relative flex size-2.5"><span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-50"></span><span class="relative size-2.5 rounded-full bg-emerald-500"></span></span>
-                            @else
-                                <span class="size-2.5 rounded-full {{ $isOnline ? 'bg-emerald-500' : 'bg-red-400' }}"></span>
-                            @endif
-                            <div class="flex-1">
-                                <p class="text-sm font-bold">{{ $scanner['gate'] }}</p>
-                                <p class="text-xs {{ $isOnline ? 'text-slate-400' : 'text-red-500' }}">{{ $scanner['status'] }}</p>
+                    @forelse ($scannerUsers as $scanner)
+                        <div data-testid="scanner-user-{{ $scanner['id'] }}" class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                            <span class="size-2.5 rounded-full bg-emerald-500"></span>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-bold">{{ $scanner['name'] }}</p>
+                                <p class="truncate text-xs text-slate-400">{{ $scanner['email'] }}</p>
                             </div>
                             <p class="text-sm font-extrabold">{{ $scanner['scans'] }} <span class="text-xs font-medium text-slate-400">scan</span></p>
                         </div>
-                    @endforeach
+                    @empty
+                        <p data-testid="scanner-user-empty" class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada akun scanner.</p>
+                    @endforelse
                 </div>
             </x-admin.ui.card>
 
             <section data-testid="active-event-information" class="relative overflow-hidden rounded-lg bg-slate-900 p-5 text-white shadow-sm dark:border dark:border-slate-700" aria-labelledby="event-info-title">
                 <div class="absolute right-2 top-2 size-20 rounded-full border-[14px] border-blue-500/20"></div>
                 <p class="text-[10px] font-extrabold uppercase tracking-widest text-blue-300">Event Aktif</p>
-                <h2 id="event-info-title" class="mt-2 text-xl font-extrabold">{{ $activeEvent }}</h2>
+                <h2 id="event-info-title" class="mt-2 text-xl font-extrabold">{{ $eventInformation['name'] }}</h2>
                 <dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
-                    <div><dt class="text-xs text-slate-400">Tanggal</dt><dd data-testid="event-date" class="mt-1 font-bold">{{ $eventDate }}</dd></div>
-                    <div><dt class="text-xs text-slate-400">Lokasi</dt><dd data-testid="event-location" class="mt-1 font-bold">{{ $eventLocation }}</dd></div>
+                    <div><dt class="text-xs text-slate-400">Tanggal</dt><dd data-testid="event-date" class="mt-1 font-bold">{{ $eventInformation['date'] }}</dd></div>
+                    <div><dt class="text-xs text-slate-400">Lokasi</dt><dd data-testid="event-location" class="mt-1 font-bold">{{ $eventInformation['location'] }}</dd></div>
                     <div class="col-span-2 flex items-center justify-between border-t border-slate-700 pt-4"><dt class="text-xs text-slate-400">Status Event</dt><dd data-testid="event-status"><x-admin.ui.badge variant="emerald-solid" weight="extrabold" dot dot-class="bg-emerald-400">AKTIF</x-admin.ui.badge></dd></div>
                 </dl>
             </section>
