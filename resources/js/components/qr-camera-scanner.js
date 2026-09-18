@@ -14,6 +14,16 @@ export const QR_CAMERA_STOP_EVENT = 'qr-camera:stop';
 const SCAN_COOLDOWN_MS = 1500;
 
 /**
+ * Instantiates the ZXing QR reader. Loaded on demand so the decoder never ships
+ * with the initial bundle of either page that scans tickets.
+ */
+export async function createQrCodeReader() {
+    const { BrowserQRCodeReader } = await import('@zxing/browser');
+
+    return new BrowserQRCodeReader();
+}
+
+/**
  * @param {unknown} error
  */
 function describeError(error) {
@@ -110,9 +120,7 @@ export default function qrCameraScanner() {
                 }
 
                 // Loaded on demand so the decoder never ships with the admin bundle.
-                const { BrowserQRCodeReader } = await import('@zxing/browser');
-
-                this.reader = new BrowserQRCodeReader();
+                this.reader = await createQrCodeReader();
 
                 this.controls = await this.reader.decodeFromConstraints(
                     { video: { facingMode: 'environment' } },

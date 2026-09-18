@@ -34,6 +34,7 @@ import {
     WifiOff,
     X,
 } from 'lucide';
+import { createQrCodeReader } from './components/qr-camera-scanner';
 
 const THEME_KEY = 'ticket-scanner-theme';
 
@@ -151,8 +152,8 @@ document.addEventListener('alpine:init', () => {
         facingMode: 'environment',
         flashOn: false,
         stream: null,
-        detector: null,
-        detectTimer: null,
+        reader: null,
+        controls: null,
         successResetTimer: null,
 
         manualOpen: false,
@@ -227,7 +228,7 @@ document.addEventListener('alpine:init', () => {
                 await this.$refs.cameraVideo.play();
 
                 this.cameraActive = true;
-                this.startDetector();
+                await this.startDecoder();
                 this.$store.toasts.add('Kamera aktif dan siap memindai', 'success');
             } catch (error) {
                 this.cameraMessageTitle = 'Akses kamera ditolak';
@@ -264,55 +265,52 @@ document.addEventListener('alpine:init', () => {
             }
 
             this.cameraActive = false;
-            this.stopDetector();
+            this.stopDecoder();
         },
 
-        startDetector() {
-            this.stopDetector();
-
-            if (typeof window.BarcodeDetector === 'undefined') {
+        /**
+         * Start decoding the frames of the video element that this page already owns.
+         * ZXing never acquires the stream here, so stopping the decoder leaves the
+         * camera running.
+         */
+        async startDecoder() {
+            if (this.controls || ! this.cameraActive) {
                 return;
             }
+
+            this.stopDecoder();
 
             try {
-                this.detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-            } catch (error) {
-                this.detector = null;
+                this.reader = await createQrCodeReader();
 
+                this.controls = await this.reader.decodeFromVideoElement(
+                    this.$refs.cameraVideo,
+                    (result) => this.handleCameraResult(result?.getText()),
+                );
+            } catch (error) {
+                this.reader = null;
+                this.controls = null;
+
+                this.cameraMessageTitle = 'Kamera tidak dapat memindai';
+                this.cameraMessageText = 'Gunakan Scanner Device atau input manual';
+            }
+        },
+
+        handleCameraResult(rawValue) {
+            const code = String(rawValue ?? '').trim();
+
+            // Hold scanning while a result sheet is open; the camera keeps running.
+            if (code === '' || this.sheet !== null) {
                 return;
             }
 
-            const scan = async () => {
-                if (! this.cameraActive || ! this.detector) {
-                    return;
-                }
-
-                if (this.sheet === null) {
-                    try {
-                        const codes = await this.detector.detect(this.$refs.cameraVideo);
-                        const value = codes[0]?.rawValue;
-
-                        if (value) {
-                            this.submitCode(value);
-                        }
-                    } catch (error) {
-                        // Individual frames can fail while the video is warming up.
-                    }
-                }
-
-                this.detectTimer = window.setTimeout(scan, 400);
-            };
-
-            scan();
+            this.submitCode(code);
         },
 
-        stopDetector() {
-            if (this.detectTimer) {
-                window.clearTimeout(this.detectTimer);
-                this.detectTimer = null;
-            }
-
-            this.detector = null;
+        stopDecoder() {
+            this.controls?.stop();
+            this.controls = null;
+            this.reader = null;
         },
 
         submitDeviceInput() {
@@ -362,6 +360,9 @@ document.addEventListener('alpine:init', () => {
             if (code === this.lastHandledCode && Date.now() < this.rescanAfter) {
                 return;
             }
+
+            // Pause decoding while the result sheet is up; closing it resumes.
+            this.stopDecoder();
 
             if (! this.$store.connection.online) {
                 this.sheet = 'offline';
@@ -453,6 +454,9 @@ document.addEventListener('alpine:init', () => {
             this.busy = false;
             this.confirming = false;
             this.result = {};
+
+            // "Scan Berikutnya": decoding resumes without restarting the camera.
+            this.startDecoder();
 
             this.refocus();
         },
