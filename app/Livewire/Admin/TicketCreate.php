@@ -49,6 +49,14 @@ class TicketCreate extends Component
         $this->save();
     }
 
+    public function resetScan(): void
+    {
+        $this->qr_code = '';
+        $this->registeredCode = null;
+
+        $this->resetValidation('qr_code');
+    }
+
     public function save(): void
     {
         $validated = $this->validate();

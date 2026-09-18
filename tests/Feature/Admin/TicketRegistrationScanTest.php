@@ -48,6 +48,18 @@ test('tombol scan ulang memakai reset tanpa restart kamera', function () {
         ->assertSee('activate-camera-button', false);
 });
 
+test('scan ulang mengosongkan QR code', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    Livewire::test(TicketCreate::class)
+        ->set('qr_code', 'QR-ULANG-001')
+        ->set('registeredCode', 'QR-TERDAFTAR-001')
+        ->call('resetScan')
+        ->assertSet('qr_code', '')
+        ->assertSet('registeredCode', null)
+        ->assertHasNoErrors('qr_code');
+});
+
 test('scanner tidak dapat akses', function () {
     $this->actingAs(User::factory()->scanner()->create())
         ->get(route('admin.tickets.create'))

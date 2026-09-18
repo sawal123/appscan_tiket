@@ -55,6 +55,8 @@ document.addEventListener('alpine:init', () => {
 
         // Manual "Scan Ulang": also drops the duplicate scan protection.
         resetScan() {
+            this.$wire.call('resetScan');
+
             this.clearScan(QR_CAMERA_RESET_EVENT);
         },
 

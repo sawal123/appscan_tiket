@@ -53,3 +53,14 @@ test('tombol non-aksi tidak diberi loading state', function () {
         ->assertSee('data-testid="open-scanner-action-button"', false)
         ->assertDontSee('admin-button-spinner', false);
 });
+
+test('quick action dashboard mengarah ke route yang sesuai', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $this->get(route('admin.dashboard'))
+        ->assertOk()
+        ->assertSee('href="'.route('admin.tickets.create').'"', false)
+        ->assertSee('href="'.route('admin.ticket-categories').'"', false)
+        ->assertSee('href="'.route('admin.scanners.create').'"', false)
+        ->assertSee('href="'.route('scanner.index').'"', false);
+});

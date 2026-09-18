@@ -9,12 +9,23 @@ use App\Livewire\Admin\ScannerCreate as AdminScannerCreate;
 use App\Livewire\Admin\ScannerMonitoring as AdminScannerMonitoring;
 use App\Livewire\Admin\ScannerOperations as AdminScannerOperations;
 use App\Livewire\Admin\Scanners as AdminScanners;
+use App\Livewire\Admin\Settings as AdminSettings;
 use App\Livewire\Admin\TicketCategories as AdminTicketCategories;
 use App\Livewire\Admin\TicketCreate as AdminTicketCreate;
 use App\Livewire\Admin\Tickets as AdminTickets;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::get('/', function () {
+    if (! auth()->check()) {
+        return redirect()->route('login');
+    }
+
+    if (auth()->user()->isScanner()) {
+        return redirect()->route('scanner.index');
+    }
+
+    return redirect()->route('admin.dashboard');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', 'admin/dashboard')->name('dashboard');
@@ -32,6 +43,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::livewire('admin/scanners/create', AdminScannerCreate::class)->name('admin.scanners.create');
     Route::livewire('admin/scanners/monitoring', AdminScannerMonitoring::class)->name('admin.scanners.monitoring');
     Route::livewire('admin/scanners/operations', AdminScannerOperations::class)->name('admin.scanners.operations');
+    Route::livewire('admin/settings', AdminSettings::class)->name('admin.settings');
 });
 
 Route::middleware(['auth', 'role:admin,scanner'])->prefix('scanner')->group(function () {

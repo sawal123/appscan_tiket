@@ -202,9 +202,9 @@
             <x-admin.ui.card :padded="true" data-testid="quick-actions-section" aria-labelledby="quick-actions-title">
                 <h2 id="quick-actions-title" class="text-lg font-extrabold">Aksi Cepat</h2>
                 <div class="mt-4 grid grid-cols-2 gap-2.5">
-                    <x-admin.ui.button variant="tile" size="lg" data-testid="register-qr-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Registrasi QR</x-admin.ui.button>
-                    <x-admin.ui.button variant="tile" size="lg" data-testid="add-category-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Kategori</x-admin.ui.button>
-                    <x-admin.ui.button variant="tile" size="lg" data-testid="add-scanner-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Scanner</x-admin.ui.button>
+                    <x-admin.ui.button variant="tile" size="lg" :href="route('admin.tickets.create')" data-testid="register-qr-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Registrasi QR</x-admin.ui.button>
+                    <x-admin.ui.button variant="tile" size="lg" :href="route('admin.ticket-categories')" data-testid="add-category-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Kategori</x-admin.ui.button>
+                    <x-admin.ui.button variant="tile" size="lg" :href="route('admin.scanners.create')" data-testid="add-scanner-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Tambah Scanner</x-admin.ui.button>
                     <x-admin.ui.button variant="primary" size="lg" :href="route('scanner.index')" data-testid="open-scanner-action-button"><svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h3m10 0h3v3M4 17v3h3m10 0h3v-3M7 12h10"/></svg>Buka Scanner</x-admin.ui.button>
                 </div>
             </x-admin.ui.card>
