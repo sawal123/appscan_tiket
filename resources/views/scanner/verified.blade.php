@@ -9,6 +9,7 @@
             :subtitle="$activeEvent?->name ?? 'Belum ada event aktif'"
             :scanner-name="$scannerName"
             :scanner-initials="$scannerInitials"
+            :scanner-role="$scannerRole"
         />
 
         <main class="verified-page">

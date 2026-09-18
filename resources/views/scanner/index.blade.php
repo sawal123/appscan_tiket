@@ -15,6 +15,7 @@
             :subtitle="$activeEvent?->name ?? 'Belum ada event aktif'"
             :scanner-name="$scannerName"
             :scanner-initials="$scannerInitials"
+            :scanner-role="$scannerRole"
         />
 
         <main class="scanner-page">
@@ -25,10 +26,14 @@
                     :location="$activeEvent?->location ?? '—'"
                 />
 
-                <x-scanner.scan-method>
-                    <x-scanner.camera-panel />
-                    <x-scanner.device-panel />
-                </x-scanner.scan-method>
+                @if ($activeEvent)
+                    <x-scanner.scan-method>
+                        <x-scanner.camera-panel />
+                        <x-scanner.device-panel />
+                    </x-scanner.scan-method>
+                @else
+                    <x-scanner.no-active-event />
+                @endif
             </div>
         </main>
 
