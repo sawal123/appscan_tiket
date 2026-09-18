@@ -65,7 +65,9 @@ class TicketValidationService
             'message' => $this->messageFor($status),
             'code' => $code,
             'category' => $ticket?->ticketCategory?->name,
-            'event' => $ticket?->event->name ?? $ticket?->ticketCategory?->event->name,
+            // The category event is eager loaded by both callers, so reading it first
+            // avoids an extra lazy load of the ticket's own event on every scan.
+            'event' => $ticket?->ticketCategory->event->name ?? $ticket?->event?->name,
             'checked_in_at' => $checkedInAt?->toIso8601String(),
             'checked_in_date' => $checkedInAt?->translatedFormat('d M Y'),
             'checked_in_time' => $checkedInAt?->format('H:i'),
