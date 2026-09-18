@@ -73,6 +73,14 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * @return HasMany<ScannerSession, $this>
+     */
+    public function scannerSessions(): HasMany
+    {
+        return $this->hasMany(ScannerSession::class);
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

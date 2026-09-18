@@ -42,6 +42,8 @@ import {
 } from './components/qr-camera-scanner';
 
 const THEME_KEY = 'ticket-scanner-theme';
+const SCANNER_DEVICE_KEY = 'gateflow-scanner-device-id';
+const HEARTBEAT_INTERVAL_MS = 45000;
 
 // A ticket that was just handled stays ignored for a while, because it is usually
 // still in front of the camera. Other tickets can be scanned immediately.
@@ -142,7 +144,7 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
-    Alpine.data('scannerApp', ({ validateUrl, checkInUrl }) => ({
+    Alpine.data('scannerApp', ({ validateUrl, checkInUrl, heartbeatUrl }) => ({
         mode: 'camera',
         sheet: null,
         result: {},
@@ -173,6 +175,9 @@ document.addEventListener('alpine:init', () => {
         lastHandledCode: '',
         rescanAfter: 0,
         audioContext: null,
+        heartbeatTimer: null,
+        deviceId: '',
+        deviceName: '',
 
         get checkedInLabel() {
             const date = this.result?.checked_in_date;
@@ -186,6 +191,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         init() {
+            this.deviceId = this.resolveDeviceId();
+            this.deviceName = this.resolveDeviceName();
+            this.startHeartbeat();
+
             window.addEventListener('offline', () => {
                 this.sheet = 'offline';
                 this.$store.toasts.add('Koneksi internet terputus', 'warning');
@@ -198,6 +207,65 @@ document.addEventListener('alpine:init', () => {
 
                 this.$store.toasts.add('Koneksi kembali online', 'success');
             });
+        },
+
+        destroy() {
+            if (this.heartbeatTimer) {
+                window.clearInterval(this.heartbeatTimer);
+                this.heartbeatTimer = null;
+            }
+        },
+
+        resolveDeviceId() {
+            try {
+                const existing = localStorage.getItem(SCANNER_DEVICE_KEY);
+
+                if (existing) {
+                    return existing;
+                }
+
+                const id = window.crypto?.randomUUID?.() ?? `scanner-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+                localStorage.setItem(SCANNER_DEVICE_KEY, id);
+
+                return id;
+            } catch (error) {
+                return `scanner-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+            }
+        },
+
+        resolveDeviceName() {
+            const platform = navigator.userAgentData?.platform || navigator.platform || 'Browser';
+
+            return `${platform} Scanner`;
+        },
+
+        scannerDevicePayload() {
+            return {
+                device_id: this.deviceId,
+                device_name: this.deviceName,
+            };
+        },
+
+        startHeartbeat() {
+            if (! heartbeatUrl) {
+                return;
+            }
+
+            this.sendHeartbeat();
+            this.heartbeatTimer = window.setInterval(() => this.sendHeartbeat(), HEARTBEAT_INTERVAL_MS);
+        },
+
+        async sendHeartbeat() {
+            if (! this.$store.connection.online) {
+                return;
+            }
+
+            try {
+                await this.post(heartbeatUrl, this.scannerDevicePayload());
+            } catch (error) {
+                // Heartbeat is monitoring-only; scanner check-in flow remains usable.
+            }
         },
 
         setMode(mode) {
@@ -442,7 +510,7 @@ document.addEventListener('alpine:init', () => {
             }, 400);
 
             try {
-                const result = await this.post(validateUrl, { code });
+                const result = await this.post(validateUrl, { code, ...this.scannerDevicePayload() });
                 this.result = result;
 
                 if (result.status === 'valid') {
@@ -472,7 +540,7 @@ document.addEventListener('alpine:init', () => {
             this.confirming = true;
 
             try {
-                const result = await this.post(checkInUrl, { code: this.result.code });
+                const result = await this.post(checkInUrl, { code: this.result.code, ...this.scannerDevicePayload() });
                 this.result = result;
 
                 if (result.status === 'success') {

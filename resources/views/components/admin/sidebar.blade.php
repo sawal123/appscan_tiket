@@ -40,6 +40,13 @@
             'icon' => 'scanner',
         ],
         [
+            'label' => 'Monitoring Scanner',
+            'href' => route('admin.scanners.monitoring'),
+            'active' => request()->routeIs('admin.scanners.monitoring'),
+            'testId' => 'nav-scanner-monitoring-link',
+            'icon' => 'scanner',
+        ],
+        [
             'label' => 'Riwayat Check-in',
             'href' => route('admin.check-in-history'),
             'active' => request()->routeIs('admin.check-in-history'),

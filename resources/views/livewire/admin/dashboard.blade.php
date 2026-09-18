@@ -5,6 +5,7 @@
     $recentCheckIns = $this->recentCheckIns;
     $scannerUsers = $this->scannerUsers;
     $scannerActivity = $this->scannerActivity;
+    $scannerSessionStats = $this->scannerSessionStats;
 
     $checkInPercentage = $statistics['checkedInPercentage'];
     $remainingPercentage = $statistics['remainingPercentage'];
@@ -47,7 +48,7 @@
 
     <section aria-labelledby="stats-heading">
         <h2 id="stats-heading" class="sr-only">Statistik Event</h2>
-        <div class="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 xl:grid-cols-4">
+        <div class="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 xl:grid-cols-5">
             <x-admin.stat-card
                 title="Total QR Terdaftar"
                 :value="$formattedTotalTickets"
@@ -79,6 +80,14 @@
                 icon="scanner"
                 accent="indigo"
                 test-id="active-scanner-stat-card"
+            />
+            <x-admin.stat-card
+                title="Scanner Online"
+                value="{{ $scannerSessionStats['online'] }} / {{ $scannerSessionStats['total'] }}"
+                subtitle="Heartbeat 2 menit"
+                icon="scanner"
+                accent="emerald"
+                test-id="scanner-online-stat-card"
             />
         </div>
     </section>
