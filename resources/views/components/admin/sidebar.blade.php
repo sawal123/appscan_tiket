@@ -2,6 +2,7 @@
     $user = auth()->user();
     $adminName = $user?->name ?: 'Administrator';
     $initials = $user && method_exists($user, 'initials') ? $user->initials() : 'AD';
+    $applicationName = app(\App\Services\ApplicationSettings::class)->get('app.name') ?? 'GateFlow';
 
     $navigation = [
         [
@@ -67,7 +68,13 @@
             'testId' => 'nav-check-in-report-link',
             'icon' => 'report',
         ],
-        ['label' => 'Pengaturan', 'href' => '#pengaturan', 'testId' => 'nav-settings-link', 'icon' => 'settings'],
+        [
+            'label' => 'Pengaturan',
+            'href' => route('admin.settings'),
+            'active' => request()->routeIs('admin.settings'),
+            'testId' => 'nav-settings-link',
+            'icon' => 'settings',
+        ],
     ];
 @endphp
 
@@ -84,7 +91,7 @@
                 <svg aria-hidden="true" class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM18 14h3M14 18v3"/></svg>
             </span>
             <span class="min-w-0">
-                <span data-testid="application-name" class="block text-base font-extrabold text-slate-950 dark:text-white">Gateflow</span>
+                <span data-testid="application-name" class="block text-base font-extrabold text-slate-950 dark:text-white">{{ $applicationName }}</span>
                 <span data-testid="active-event-sidebar" class="block truncate text-xs font-medium text-slate-500 dark:text-slate-400">Festival ABC 2026</span>
             </span>
         </a>
