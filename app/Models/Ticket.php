@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -64,7 +65,7 @@ class Ticket extends Model
             }
 
             if (! $ticket->registered_at) {
-                $ticket->registered_at = now();
+                $ticket->registered_at = Carbon::now();
             }
         });
 
@@ -126,6 +127,14 @@ class Ticket extends Model
     public function checkedInBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'checked_in_by');
+    }
+
+    /**
+     * @return HasMany<CheckInLog, $this>
+     */
+    public function checkInLogs(): HasMany
+    {
+        return $this->hasMany(CheckInLog::class);
     }
 
     /**

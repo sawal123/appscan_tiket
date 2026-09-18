@@ -40,7 +40,13 @@
             'icon' => 'categories',
         ],
         ['label' => 'User Scanner', 'href' => '#scanner', 'testId' => 'nav-scanner-users-link', 'icon' => 'scanner'],
-        ['label' => 'Riwayat Verifikasi', 'href' => '#riwayat', 'testId' => 'nav-verification-history-link', 'icon' => 'history'],
+        [
+            'label' => 'Riwayat Check-in',
+            'href' => route('admin.check-in-history'),
+            'active' => request()->routeIs('admin.check-in-history'),
+            'testId' => 'nav-check-in-history-link',
+            'icon' => 'history',
+        ],
         ['label' => 'Pengaturan', 'href' => '#pengaturan', 'testId' => 'nav-settings-link', 'icon' => 'settings'],
     ];
 @endphp
