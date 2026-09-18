@@ -2,6 +2,7 @@
 
 use App\Models\CheckInLog;
 use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -30,9 +31,12 @@ function uxTicket(TicketCategory $category, string $code): Ticket
 }
 
 test('valid QR menampilkan status success', function () {
-    $this->actingAs(User::factory()->scanner()->create(['name' => 'Andi']));
+    $scanner = User::factory()->scanner()->create(['name' => 'Andi']);
 
-    uxTicket(uxCategory(uxEvent()), 'UX-001');
+    $event = uxEvent();
+    uxTicket(uxCategory($event), 'UX-001');
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $event->id, 'assigned_at' => now()]);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'ux-001'])
         ->assertOk()
@@ -42,12 +46,18 @@ test('valid QR menampilkan status success', function () {
 });
 
 test('duplicate QR menampilkan already checked in', function () {
-    uxTicket(uxCategory(uxEvent()), 'UX-002');
+    $event = uxEvent();
+    uxTicket(uxCategory($event), 'UX-002');
 
-    $this->actingAs(User::factory()->scanner()->create(['name' => 'Andi']));
+    $andi = User::factory()->scanner()->create(['name' => 'Andi']);
+    $budi = User::factory()->scanner()->create(['name' => 'Budi']);
+    ScannerEventAssignment::create(['user_id' => $andi->id, 'event_id' => $event->id, 'assigned_at' => now()]);
+    ScannerEventAssignment::create(['user_id' => $budi->id, 'event_id' => $event->id, 'assigned_at' => now()]);
+
+    $this->actingAs($andi);
     $this->postJson(route('scanner.check-in'), ['code' => 'UX-002'])->assertOk();
 
-    $this->actingAs(User::factory()->scanner()->create(['name' => 'Budi']));
+    $this->actingAs($budi);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'UX-002'])
         ->assertOk()
@@ -60,9 +70,11 @@ test('duplicate QR menampilkan already checked in', function () {
 });
 
 test('invalid QR menampilkan status invalid', function () {
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
 
-    uxEvent();
+    $event = uxEvent();
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $event->id, 'assigned_at' => now()]);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'TIDAK-ADA'])
         ->assertOk()
@@ -74,9 +86,12 @@ test('invalid QR menampilkan status invalid', function () {
 });
 
 test('response membawa kategori scanner dan waktu', function () {
-    $this->actingAs(User::factory()->scanner()->create(['name' => 'Andi Pratama']));
+    $scanner = User::factory()->scanner()->create(['name' => 'Andi Pratama']);
 
-    uxTicket(uxCategory(uxEvent(), 'VVIP'), 'UX-004');
+    $event = uxEvent();
+    uxTicket(uxCategory($event, 'VVIP'), 'UX-004');
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $event->id, 'assigned_at' => now()]);
+    $this->actingAs($scanner);
 
     $response = $this->postJson(route('scanner.check-in'), ['code' => 'UX-004'])
         ->assertOk()
@@ -101,9 +116,11 @@ test('scanner nonaktif tetap ditolak', function () {
 });
 
 test('halaman scanner menampilkan badge status dan tombol scan berikutnya', function () {
-    uxEvent();
+    $event = uxEvent();
+    $scanner = User::factory()->scanner()->create();
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $event->id, 'assigned_at' => now()]);
 
-    $this->actingAs(User::factory()->scanner()->create())
+    $this->actingAs($scanner)
         ->get(route('scanner.index'))
         ->assertOk()
         ->assertSee('success-status-badge', false)

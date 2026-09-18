@@ -28,7 +28,7 @@ class ScannerMonitoring extends Component
 
         return view('livewire.admin.scanner-monitoring', [
             'sessions' => ScannerSession::query()
-                ->with('user:id,name,email')
+                ->with('user.scannerEventAssignment.event:id,name')
                 ->orderByDesc('last_seen_at')
                 ->get(),
             'scanTotals' => $scanTotals,

@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\UserRole;
+use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
@@ -16,7 +18,15 @@ class Scanners extends Component
 {
     public bool $showModal = false;
 
+    public bool $showEventModal = false;
+
     public ?int $editingId = null;
+
+    public ?int $assigningScannerId = null;
+
+    public string $assigningScannerName = '';
+
+    public ?int $assignmentEventId = null;
 
     public string $name = '';
 
@@ -71,11 +81,50 @@ class Scanners extends Component
         $scanner->update(['is_active' => ! $scanner->is_active]);
     }
 
+    public function assignEvent(int $scannerId): void
+    {
+        $scanner = $this->findScanner($scannerId)->load('scannerEventAssignment');
+
+        $this->assigningScannerId = $scanner->id;
+        $this->assigningScannerName = $scanner->name;
+        $this->assignmentEventId = $scanner->scannerEventAssignment?->event_id;
+
+        $this->resetValidation();
+        $this->showEventModal = true;
+    }
+
+    public function saveEventAssignment(): void
+    {
+        $validated = $this->validateOnlyAssignment();
+
+        ScannerEventAssignment::query()->updateOrCreate(
+            ['user_id' => $validated['assigningScannerId']],
+            [
+                'event_id' => $validated['assignmentEventId'],
+                'assigned_by' => auth()->id(),
+                'assigned_at' => now(),
+            ],
+        );
+
+        $this->closeEventModal();
+    }
+
     public function closeModal(): void
     {
         $this->showModal = false;
 
         $this->resetForm();
+    }
+
+    public function closeEventModal(): void
+    {
+        $this->showEventModal = false;
+
+        $this->assigningScannerId = null;
+        $this->assigningScannerName = '';
+        $this->assignmentEventId = null;
+
+        $this->resetValidation();
     }
 
     private function findScanner(?int $scannerId): User
@@ -117,6 +166,21 @@ class Scanners extends Component
     }
 
     /**
+     * @return array{assigningScannerId: int, assignmentEventId: int}
+     */
+    private function validateOnlyAssignment(): array
+    {
+        return $this->validate([
+            'assigningScannerId' => [
+                'required',
+                'integer',
+                Rule::exists('users', 'id')->where('role', UserRole::Scanner->value),
+            ],
+            'assignmentEventId' => ['required', 'integer', Rule::exists('events', 'id')],
+        ]);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function messages(): array
@@ -133,7 +197,12 @@ class Scanners extends Component
         return view('livewire.admin.scanners', [
             'scanners' => User::query()
                 ->where('role', UserRole::Scanner->value)
+                ->with('scannerEventAssignment.event:id,name')
                 ->withCount('checkInLogs')
+                ->orderBy('name')
+                ->get(),
+            'events' => Event::query()
+                ->select(['id', 'name'])
                 ->orderBy('name')
                 ->get(),
         ])->layoutData([

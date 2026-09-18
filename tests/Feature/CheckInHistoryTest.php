@@ -2,6 +2,7 @@
 
 use App\Models\CheckInLog;
 use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -56,9 +57,10 @@ test('scanner forbidden dan admin bisa akses check in history', function () {
 
 test('successful check in membuat log', function () {
     $scanner = User::factory()->scanner()->create();
-    $this->actingAs($scanner);
 
     $ticket = checkInHistoryActiveTicket(['code' => 'LOG-001']);
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $ticket->event_id, 'assigned_at' => now()]);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'log-001'])
         ->assertOk()
@@ -74,9 +76,10 @@ test('successful check in membuat log', function () {
 
 test('duplicate scan membuat log already checked in', function () {
     $scanner = User::factory()->scanner()->create();
-    $this->actingAs($scanner);
 
     $ticket = checkInHistoryActiveTicket(['code' => 'LOG-002']);
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $ticket->event_id, 'assigned_at' => now()]);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'LOG-002'])
         ->assertOk()
@@ -101,6 +104,8 @@ test('duplicate scan membuat log already checked in', function () {
 
 test('invalid QR membuat log invalid', function () {
     $scanner = User::factory()->scanner()->create();
+    $event = Event::factory()->active()->create();
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $event->id, 'assigned_at' => now()]);
     $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'missing'])

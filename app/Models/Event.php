@@ -48,6 +48,14 @@ class Event extends Model
     }
 
     /**
+     * @return HasMany<ScannerEventAssignment, $this>
+     */
+    public function scannerAssignments(): HasMany
+    {
+        return $this->hasMany(ScannerEventAssignment::class);
+    }
+
+    /**
      * Limit the query to events that are currently active.
      *
      * @param  Builder<Event>  $query
