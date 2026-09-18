@@ -186,3 +186,25 @@ test('scanner tetap tidak bisa akses admin', function () {
         ->get(route('admin.scanners'))
         ->assertForbidden();
 });
+
+test('scanner aktif dapat membuka halaman scanner', function () {
+    $this->actingAs(scannerUser())
+        ->get(route('scanner.index'))
+        ->assertOk();
+});
+
+test('scanner yang dinonaktifkan tidak dapat membuka halaman scanner', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+
+    Livewire::test(Scanners::class)
+        ->call('toggleActive', $scanner->id)
+        ->assertHasNoErrors();
+
+    expect($scanner->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($scanner->fresh())
+        ->get(route('scanner.index'))
+        ->assertForbidden();
+});
