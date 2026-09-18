@@ -1,7 +1,7 @@
 <div
     x-data="ticketRegistrationScanner"
     x-on:ticket-registered.window="rearm()"
-    x-on:keydown.escape.window="stopCamera()"
+    x-on:qr-camera:scanned="onQrScanned($event.detail.code)"
     class="mx-auto max-w-[1480px] space-y-6"
 >
     <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -60,7 +60,15 @@
                 </button>
             </div>
 
-            <div class="mt-5" data-testid="camera-method-panel" x-show="$wire.scanMethod === 'camera'">
+            <div
+                class="mt-5"
+                data-testid="camera-method-panel"
+                x-data="qrCameraScanner"
+                x-show="$wire.scanMethod === 'camera'"
+                x-on:qr-camera:rearm.window="rearm()"
+                x-on:qr-camera:stop.window="stop()"
+                x-on:keydown.escape.window="stop()"
+            >
                 <div class="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950" data-testid="camera-viewport" x-bind:class="{ 'ring-2 ring-blue-500/40': cameraActive }">
                     <video class="size-full object-cover" data-testid="camera-video" x-ref="cameraVideo" playsinline muted x-bind:class="cameraActive ? 'opacity-100' : 'opacity-0'"></video>
 
@@ -68,8 +76,8 @@
                         <span class="grid size-14 place-items-center rounded-full border border-white/15 bg-white/5">
                             <svg aria-hidden="true" class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
                         </span>
-                        <strong class="text-sm text-white" x-text="cameraMessage">Kamera belum aktif</strong>
-                        <span class="text-xs">Izinkan akses untuk mulai memindai</span>
+                        <strong class="text-sm text-white" data-testid="camera-placeholder-status" x-text="statusLabel">Kamera belum aktif</strong>
+                        <span class="text-xs" x-text="statusHint">Izinkan akses untuk mulai memindai</span>
                     </div>
 
                     <div class="pointer-events-none absolute inset-[18%]" aria-hidden="true">
@@ -84,7 +92,7 @@
                         data-testid="activate-camera-button"
                         x-show="! cameraActive"
                         x-bind:disabled="cameraLoading"
-                        x-on:click="startCamera()"
+                        x-on:click="start()"
                         class="absolute bottom-4 left-1/2 inline-flex min-h-11 -translate-x-1/2 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white shadow-sm shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-60"
                     >
                         <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -96,7 +104,7 @@
                         data-testid="stop-camera-button"
                         x-cloak
                         x-show="cameraActive"
-                        x-on:click="stopCamera()"
+                        x-on:click="stop()"
                         class="absolute bottom-4 left-1/2 inline-flex min-h-11 -translate-x-1/2 items-center gap-2 rounded-lg border border-white/20 bg-slate-950/60 px-4 text-sm font-bold text-white backdrop-blur hover:bg-slate-950/80"
                     >
                         <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
@@ -104,7 +112,10 @@
                     </button>
                 </div>
 
-                <p class="mt-3 text-center text-sm text-slate-500 dark:text-slate-400" data-testid="camera-instruction">Arahkan kamera ke QR tiket, QR akan terbaca otomatis.</p>
+                <div class="mt-3 text-center">
+                    <p data-testid="camera-status" class="text-sm font-bold text-slate-700 dark:text-slate-200" x-text="statusLabel">Kamera belum aktif</p>
+                    <p data-testid="camera-instruction" class="mt-1 text-xs text-slate-500 dark:text-slate-400" x-text="statusHint">Izinkan akses untuk mulai memindai</p>
+                </div>
             </div>
 
             <div class="mt-5" data-testid="device-method-panel" x-cloak x-show="$wire.scanMethod === 'device'">

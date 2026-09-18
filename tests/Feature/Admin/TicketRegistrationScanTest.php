@@ -20,6 +20,24 @@ test('admin dapat membuka create ticket', function () {
         ->assertSee('Hardware Scanner 2D');
 });
 
+test('camera memakai qrCameraScanner dan bukan BarcodeDetector', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.tickets.create'))
+        ->assertOk()
+        ->assertSee('qrCameraScanner')
+        ->assertSee('camera-status')
+        ->assertDontSee('BarcodeDetector', false);
+});
+
+test('hardware scanner tetap memakai input keyboard dan enter', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.tickets.create'))
+        ->assertOk()
+        ->assertSee('hardware-scanner-input', false)
+        ->assertSee('submitHardwareCode')
+        ->assertSee('Input otomatis diproses setelah scanner mengirim Enter');
+});
+
 test('scanner tidak dapat akses', function () {
     $this->actingAs(User::factory()->scanner()->create())
         ->get(route('admin.tickets.create'))

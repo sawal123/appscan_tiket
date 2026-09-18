@@ -13,3 +13,5 @@
 - Does feature work on a dedicated Git branch named with a `feat/` prefix plus a short lowercase description (e.g. `feat/slicing_app_ui`, `feat/checkin`, `feat/dashboard`), commits there rather than to `main`. Confidence: 0.75
 - When starting feature work (or after finishing a slice), expects the branch to come off an up-to-date `main`: switch to `main`, `git pull`, then create the feature branch from it, then push with upstream tracking. Confidence: 0.8
 - Prefers fast-forward-only pulls (e.g. `git pull --ff-only origin main`) to keep history linear and avoid unintended merge commits. Confidence: 0.7
+- Runs destructive database commands (e.g. `migrate:fresh --seed`) against a temporary throwaway SQLite database instead of the dev database, so existing data isn't wiped. Confidence: 0.65
+- Verifies seeders end-to-end by inspecting the resulting data (row counts, cross-table consistency, no duplicates) and re-running the seed to confirm idempotency, not just trusting a clean exit. Confidence: 0.6
