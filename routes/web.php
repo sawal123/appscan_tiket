@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Scanner\ScannerController;
+use App\Livewire\Admin\CheckInHistory as AdminCheckInHistory;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Events as AdminEvents;
 use App\Livewire\Admin\TicketCategories as AdminTicketCategories;
@@ -18,6 +19,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::livewire('admin/events', AdminEvents::class)->name('admin.events');
     Route::livewire('admin/tickets', AdminTickets::class)->name('admin.tickets');
     Route::livewire('admin/ticket-categories', AdminTicketCategories::class)->name('admin.ticket-categories');
+    Route::livewire('admin/check-in-history', AdminCheckInHistory::class)->name('admin.check-in-history');
 });
 
 Route::middleware(['auth', 'role:admin,scanner'])->prefix('scanner')->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Scanner;
 
 use App\Http\Controllers\Controller;
+use App\Models\CheckInLog;
 use App\Models\Event;
 use App\Models\Ticket;
 use App\Services\TicketCheckInService;
@@ -27,17 +28,43 @@ class ScannerController extends Controller
 
     public function verified(): View
     {
-        $tickets = Ticket::query()
+        $loggedTickets = CheckInLog::query()
+            ->where('status', CheckInLog::STATUS_SUCCESS)
+            ->whereHas('ticket', fn ($query) => $query->forActiveEvent())
+            ->with(['ticket.ticketCategory.event'])
+            ->orderByDesc('scanned_at')
+            ->get()
+            ->map(fn (CheckInLog $log): array => [
+                'code' => $log->ticket->qr_code,
+                'category' => $log->ticket?->ticketCategory?->name,
+                'time' => $log->scanned_at->format('H:i'),
+                'scanned_at' => $log->scanned_at,
+                'gate' => $log->ticket?->ticketCategory?->event?->location,
+            ]);
+
+        $legacyTickets = Ticket::query()
             ->forActiveEvent()
             ->whereNotNull('checked_in_at')
-            ->with('ticketCategory')
+            ->whereDoesntHave('checkInLogs', fn ($query) => $query->where('status', CheckInLog::STATUS_SUCCESS))
+            ->with('ticketCategory.event')
             ->orderByDesc('checked_in_at')
             ->get()
             ->map(fn (Ticket $ticket): array => [
                 'code' => $ticket->qr_code,
                 'category' => $ticket->ticketCategory?->name,
                 'time' => $ticket->checked_in_at?->format('H:i'),
-                'gate' => $this->activeEvent()?->location,
+                'scanned_at' => $ticket->checked_in_at,
+                'gate' => $ticket->ticketCategory?->event?->location,
+            ]);
+
+        $tickets = collect($loggedTickets->all())
+            ->merge($legacyTickets)
+            ->sortByDesc('scanned_at')
+            ->map(fn (array $ticket): array => [
+                'code' => $ticket['code'],
+                'category' => $ticket['category'],
+                'time' => $ticket['time'],
+                'gate' => $ticket['gate'],
             ])
             ->values()
             ->all();

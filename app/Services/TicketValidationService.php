@@ -64,7 +64,7 @@ class TicketValidationService
             'status' => $status,
             'code' => $code,
             'category' => $ticket?->ticketCategory?->name,
-            'event' => $ticket?->event?->name ?? $ticket?->ticketCategory?->event?->name,
+            'event' => $ticket?->event->name ?? $ticket?->ticketCategory?->event->name,
             'checked_in_at' => $checkedInAt?->toIso8601String(),
             'checked_in_date' => $checkedInAt?->translatedFormat('d M Y'),
             'checked_in_time' => $checkedInAt?->format('H:i'),
