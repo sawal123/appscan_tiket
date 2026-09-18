@@ -144,6 +144,7 @@ document.addEventListener('alpine:init', () => {
         stream: null,
         detector: null,
         detectTimer: null,
+        successResetTimer: null,
 
         manualOpen: false,
         manualCode: '',
@@ -394,7 +395,12 @@ document.addEventListener('alpine:init', () => {
 
                 if (result.status === 'success') {
                     this.sheet = 'success';
-                    this.$store.toasts.add('Tiket berhasil diverifikasi', 'success');
+                    this.$store.toasts.add('Check-in berhasil', 'success');
+                    this.successResetTimer = window.setTimeout(() => {
+                        if (this.sheet === 'success') {
+                            this.closeSheet();
+                        }
+                    }, 1400);
                 } else if (result.status === 'used') {
                     this.sheet = 'used';
                     this.$store.toasts.add('Tiket sudah digunakan', 'warning');
@@ -411,6 +417,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         closeSheet() {
+            if (this.successResetTimer) {
+                window.clearTimeout(this.successResetTimer);
+                this.successResetTimer = null;
+            }
+
             this.sheet = null;
             this.busy = false;
             this.confirming = false;
@@ -448,27 +459,6 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    Alpine.data('verifiedApp', (initialTickets = []) => ({
-        tickets: initialTickets,
-        search: '',
-        filter: 'Semua',
-        filters: ['Semua', 'VIP', 'Regular', 'VVIP'],
-
-        get filtered() {
-            const term = this.search.trim().toLowerCase();
-
-            return this.tickets.filter((ticket) => {
-                const matchesFilter = this.filter === 'Semua' || ticket.category === this.filter;
-                const matchesSearch = String(ticket.code ?? '').toLowerCase().includes(term);
-
-                return matchesFilter && matchesSearch;
-            });
-        },
-
-        get countLabel() {
-            return `${this.tickets.length} tiket telah masuk`;
-        },
-    }));
 });
 
 renderIcons();

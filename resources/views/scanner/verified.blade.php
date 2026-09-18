@@ -1,14 +1,10 @@
 <x-scanner.layout
-    title="Tiket Terverifikasi — Ticket Scanner"
+    title="Tiket Terverifikasi - Ticket Scanner"
     description="Daftar tiket yang telah terverifikasi di event aktif."
     page="verified"
     body-class="app-body"
 >
-    <div
-        x-data="verifiedApp(@js($tickets))"
-        x-on:keydown.meta.k.window.prevent="$refs.search?.focus()"
-        x-on:keydown.ctrl.k.window.prevent="$refs.search?.focus()"
-    >
+    <div x-data x-on:keydown.meta.k.window.prevent="$refs.search?.focus()" x-on:keydown.ctrl.k.window.prevent="$refs.search?.focus()">
         <x-scanner.header
             :subtitle="$activeEvent?->name ?? 'Belum ada event aktif'"
             :scanner-name="$scannerName"
@@ -18,25 +14,34 @@
         <main class="verified-page">
             <section class="verified-hero" aria-labelledby="verified-title">
                 <div>
-                    <p class="eyebrow" data-testid="verified-event-label">{{ $activeEvent?->name ?? 'Belum ada event aktif' }} &middot; {{ $activeEvent?->location ?? '—' }}</p>
+                    <p class="eyebrow" data-testid="verified-event-label">{{ $activeEvent?->name ?? 'Belum ada event aktif' }} &middot; {{ $activeEvent?->location ?? '-' }}</p>
                     <h1 id="verified-title" data-testid="verified-page-title">Tiket Terverifikasi</h1>
-                    <p class="verified-count" id="verifiedCount" data-testid="verified-ticket-count" x-text="countLabel">0 tiket telah masuk</p>
+                    <p class="verified-count" id="verifiedCount" data-testid="verified-ticket-count">{{ $tickets->total() }} tiket telah masuk</p>
                 </div>
                 <a class="button button--primary verified-scan-button" href="{{ route('scanner.index') }}" data-testid="verified-scan-ticket-link"><i data-lucide="scan-line"></i>Scan tiket</a>
             </section>
 
             <section class="verified-tools" aria-label="Pencarian dan filter tiket">
-                <label class="search-shell" for="ticketSearch">
+                <form method="GET" action="{{ route('scanner.verified') }}" class="search-shell">
+                    <label class="sr-only" for="ticketSearch">Cari kode QR</label>
                     <i data-lucide="search"></i>
-                    <input id="ticketSearch" type="search" autocomplete="off" placeholder="Cari kode QR..." data-testid="verified-search-input" x-ref="search" x-model="search">
-                    <kbd>⌘ K</kbd>
-                </label>
+                    <input id="ticketSearch" name="search" value="{{ $search }}" type="search" autocomplete="off" placeholder="Cari kode QR..." data-testid="verified-search-input" x-ref="search">
+                    @if ($categoryFilter)
+                        <input type="hidden" name="category" value="{{ $categoryFilter }}">
+                    @endif
+                    <button class="text-button" type="submit" data-testid="verified-search-button">Cari</button>
+                </form>
 
                 <div class="filter-row" role="group" aria-label="Filter kategori" data-testid="verified-filter-group">
-                    <button class="filter-chip" type="button" data-filter="Semua" data-testid="filter-all-button" x-bind:class="{ 'is-active': filter === 'Semua' }" x-on:click="filter = 'Semua'">Semua</button>
-                    <button class="filter-chip" type="button" data-filter="VIP" data-testid="filter-vip-button" x-bind:class="{ 'is-active': filter === 'VIP' }" x-on:click="filter = 'VIP'">VIP</button>
-                    <button class="filter-chip" type="button" data-filter="Regular" data-testid="filter-regular-button" x-bind:class="{ 'is-active': filter === 'Regular' }" x-on:click="filter = 'Regular'">Regular</button>
-                    <button class="filter-chip" type="button" data-filter="VVIP" data-testid="filter-vvip-button" x-bind:class="{ 'is-active': filter === 'VVIP' }" x-on:click="filter = 'VVIP'">VVIP</button>
+                    @php($baseQuery = filled($search) ? ['search' => $search] : [])
+                    <a class="filter-chip {{ $categoryFilter ? '' : 'is-active' }}" href="{{ route('scanner.verified', $baseQuery) }}" data-testid="filter-all-button">Semua</a>
+                    @foreach ($categories as $category)
+                        <a
+                            class="filter-chip {{ $categoryFilter === $category->id ? 'is-active' : '' }}"
+                            href="{{ route('scanner.verified', [...$baseQuery, 'category' => $category->id]) }}"
+                            data-testid="filter-category-{{ $category->id }}"
+                        >{{ $category->name }}</a>
+                    @endforeach
                 </div>
             </section>
 
@@ -45,44 +50,52 @@
                     <h2 id="list-title" data-testid="verified-list-title">Check-in terbaru</h2>
                 </div>
 
-                <div class="ticket-table-head" aria-hidden="true" x-show="tickets.length > 0">
-                    <span>Tiket</span><span>Waktu</span><span>Gate</span><span>Status</span>
-                </div>
+                @if ($tickets->count() > 0)
+                    <div class="ticket-table-head" aria-hidden="true">
+                        <span>QR Code</span><span>Kategori</span><span>Waktu Check-in</span><span>Scanner</span><span>Status</span>
+                    </div>
 
-                <div class="verified-list" id="verifiedList" data-testid="verified-ticket-list" x-show="tickets.length > 0">
-                    <template x-for="(ticket, index) in filtered" :key="ticket.code">
-                        <article
-                            class="ticket-row"
-                            x-init="$nextTick(() => window.renderIcons())"
-                            x-bind:data-testid="'verified-ticket-row-' + index"
-                            x-bind:style="'animation-delay:' + Math.min(index * 35, 210) + 'ms'"
-                        >
-                            <div class="ticket-identity">
-                                <span class="ticket-check" aria-hidden="true"><i data-lucide="check"></i></span>
-                                <span class="ticket-code">
-                                    <span class="ticket-badge" x-bind:data-testid="'ticket-category-' + index" x-text="ticket.category"></span>
-                                    <strong x-bind:data-testid="'ticket-code-' + index" x-text="ticket.code"></strong>
-                                </span>
-                            </div>
-                            <span class="ticket-cell" x-bind:data-testid="'ticket-time-' + index" x-text="ticket.time"></span>
-                            <span class="ticket-cell" x-bind:data-testid="'ticket-gate-' + index" x-text="ticket.gate"></span>
-                            <span class="ticket-status" x-bind:data-testid="'ticket-status-' + index">Masuk</span>
-                        </article>
-                    </template>
-                </div>
+                    <div class="verified-list" id="verifiedList" data-testid="verified-ticket-list">
+                        @foreach ($tickets as $ticket)
+                            <article class="ticket-row" data-testid="verified-ticket-row-{{ $ticket->id }}">
+                                <div class="ticket-identity">
+                                    <span class="ticket-check" aria-hidden="true"><i data-lucide="check"></i></span>
+                                    <span class="ticket-code">
+                                        <span class="ticket-badge" data-testid="ticket-category-{{ $ticket->id }}">{{ $ticket->ticketCategory?->name ?? '-' }}</span>
+                                        <strong data-testid="ticket-code-{{ $ticket->id }}">{{ $ticket->qr_code }}</strong>
+                                    </span>
+                                </div>
+                                <span class="ticket-cell ticket-cell--category">{{ $ticket->ticketCategory?->name ?? '-' }}</span>
+                                <span class="ticket-cell ticket-cell--time" data-testid="ticket-time-{{ $ticket->id }}">{{ $ticket->checked_in_at?->translatedFormat('d M Y H:i') ?? '-' }}</span>
+                                <span class="ticket-cell ticket-cell--scanner" data-testid="ticket-scanner-{{ $ticket->id }}">{{ $ticket->checkedInBy?->name ?? '-' }}</span>
+                                <span class="ticket-status" data-testid="ticket-status-{{ $ticket->id }}">SUCCESS</span>
+                            </article>
+                        @endforeach
+                    </div>
 
-                <div class="empty-state" id="emptyState" data-testid="verified-empty-state" x-show="tickets.length === 0" x-cloak>
-                    <span class="empty-state__icon"><i data-lucide="ticket-check"></i></span>
-                    <h2 data-testid="empty-state-title">Belum Ada Tiket Terverifikasi</h2>
-                    <p data-testid="empty-state-description">Tiket yang berhasil check-in akan muncul di sini.</p>
-                    <a class="button button--primary" href="{{ route('scanner.index') }}" data-testid="empty-start-scan-link"><i data-lucide="scan-line"></i>Mulai Scan</a>
-                </div>
+                    <nav class="verified-pagination" aria-label="Pagination riwayat check-in">
+                        @if ($tickets->onFirstPage())
+                            <span class="pagination-link is-disabled">Sebelumnya</span>
+                        @else
+                            <a class="pagination-link" href="{{ $tickets->previousPageUrl() }}">Sebelumnya</a>
+                        @endif
 
-                <div class="empty-state" data-testid="no-search-results" x-show="tickets.length > 0 && filtered.length === 0" x-cloak>
-                    <span class="empty-state__icon"><i data-lucide="search-x"></i></span>
-                    <h2>Tiket tidak ditemukan</h2>
-                    <p>Coba kata kunci atau kategori lain.</p>
-                </div>
+                        <span class="pagination-summary" data-testid="verified-pagination-summary">Halaman {{ $tickets->currentPage() }} dari {{ $tickets->lastPage() }}</span>
+
+                        @if ($tickets->hasMorePages())
+                            <a class="pagination-link" href="{{ $tickets->nextPageUrl() }}" data-testid="verified-next-page-link">Berikutnya</a>
+                        @else
+                            <span class="pagination-link is-disabled">Berikutnya</span>
+                        @endif
+                    </nav>
+                @else
+                    <div class="empty-state" id="emptyState" data-testid="verified-empty-state">
+                        <span class="empty-state__icon"><i data-lucide="ticket-check"></i></span>
+                        <h2 data-testid="empty-state-title">Belum Ada Tiket Terverifikasi</h2>
+                        <p data-testid="empty-state-description">Tiket yang berhasil check-in akan muncul di sini.</p>
+                        <a class="button button--primary" href="{{ route('scanner.index') }}" data-testid="empty-start-scan-link"><i data-lucide="scan-line"></i>Mulai Scan</a>
+                    </div>
+                @endif
             </section>
         </main>
 
