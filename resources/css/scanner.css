@@ -257,6 +257,11 @@ button.connection-pill:active { transform: scale(.97); }
 .result-status--danger .result-status__icon { background: var(--danger-soft); color: var(--danger); }
 .result-status--success .result-status__icon { animation: successPop 400ms var(--ease); box-shadow: 0 0 0 10px color-mix(in srgb, var(--success) 7%, transparent); }
 .result-status__kicker { margin: 0 0 4px; color: var(--text-secondary); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
+.result-badge { display: inline-flex; min-height: 27px; margin-bottom: 10px; padding: 0 13px; align-items: center; border: 1px solid transparent; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.result-badge--success { background: var(--success-soft); border-color: color-mix(in srgb, var(--success) 32%, transparent); color: var(--success); }
+.result-badge--warning { background: var(--warning-soft); border-color: color-mix(in srgb, var(--warning) 32%, transparent); color: var(--warning); }
+.result-badge--danger { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 32%, transparent); color: var(--danger); }
+.result-badge--muted { background: var(--surface-soft); border-color: var(--border); color: var(--text-secondary); }
 .result-status h2 { margin: 0; font-size: clamp(24px, 6vw, 31px); line-height: 1.15; }
 .result-status__description { max-width: 410px; margin: 9px auto 0; color: var(--text-secondary); font-size: 13px; }
 .result-details { display: grid; margin: 24px 0; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }

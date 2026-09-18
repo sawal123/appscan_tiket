@@ -27,7 +27,7 @@ class TicketCheckInService
         return DB::transaction(function () use ($normalized, $user): array {
             $ticket = Ticket::query()
                 ->forActiveEvent()
-                ->with(['ticketCategory.event'])
+                ->with(['ticketCategory.event', 'checkedInBy'])
                 ->where(function ($query) use ($normalized): void {
                     $query->where('qr_code', $normalized)->orWhere('code', $normalized);
                 })
