@@ -47,6 +47,13 @@
             'icon' => 'scanner',
         ],
         [
+            'label' => 'Operasional Scanner',
+            'href' => route('admin.scanners.operations'),
+            'active' => request()->routeIs('admin.scanners.operations'),
+            'testId' => 'nav-scanner-operations-link',
+            'icon' => 'scanner',
+        ],
+        [
             'label' => 'Riwayat Check-in',
             'href' => route('admin.check-in-history'),
             'active' => request()->routeIs('admin.check-in-history'),
