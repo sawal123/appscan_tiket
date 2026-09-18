@@ -1,6 +1,7 @@
 # Workflow Preferences
 
 - Requires automated tests with Pest for new work, covering authorization (guests/scanner/admin), CRUD, validation, and edge cases. Confidence: 0.9
+- For bug fixes expects an explicit regression test that reproduces the reported scenario (e.g. Event A has check-ins, Event B is active, and Event B's dashboard/report must not show Event A's log), usually proving the excluded data is still present in the database so the test fails only because of the scoping. Confidence: 0.7
 - Validation workflow order: run migration, then targeted/new tests, then regression tests, then the full `php artisan test` suite. Confidence: 0.9
 - Runs Pint on changed PHP files as part of finishing. Confidence: 0.85
 - Runs `npm run build` only when frontend assets actually changed. Confidence: 0.85
@@ -21,4 +22,5 @@
 - Treats the local dev database (MySQL with real seeded data) as data that must never be destroyed by tooling — the test suite in particular must run in full isolation (sqlite `:memory:`) and leave dev row counts untouched; suspects and investigates any agent task that ends with emptied dev tables. Confidence: 0.7
 - Expects test-environment overrides to be genuinely effective, not merely declared: verifies the runner actually resolves the intended config (e.g. that `phpunit.xml` `<env>` values beat `.env` via `$_SERVER`/`$_ENV` precedence) before trusting that tests are sandboxed. Confidence: 0.6
 - Prefers leftover uncommitted changes (e.g. a test-isolation/`phpunit.xml` infrastructure fix) to ride along into the next feature PR instead of being split off into its own fix branch/PR — pragmatic PR boundaries over strictly one-concern-per-PR. Confidence: 0.55
+- When a task requirement conflicts with an existing test that must keep passing (e.g. task asks for limit 20 but an old test asserts exactly 10), the stated task requirement wins; relocate/move the now-outdated test's coverage into the new task's test file rather than weakening the task or keeping the old behavior. Confidence: 0.6
 - For performance/optimization work, expects an evidence-first approach: inspect the indexes that actually exist in the database (not just what migrations declare) and measure with `EXPLAIN`, per-request query counts, and latency against a realistic dataset (e.g. 7000 tickets) before changing anything. Explicitly forbids premature optimization, and if the review finds no real problem, no code change should be made. Confidence: 0.7

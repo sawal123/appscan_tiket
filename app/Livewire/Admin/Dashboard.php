@@ -140,7 +140,7 @@ class Dashboard extends Component
     }
 
     /**
-     * The ten most recent check-in attempts.
+     * The twenty most recent check-in attempts.
      *
      * @return array<int, array<string, string|int>>
      */
@@ -148,10 +148,11 @@ class Dashboard extends Component
     public function recentCheckIns(): array
     {
         return CheckInLog::query()
+            ->whereHas('ticket', fn (Builder $query) => $query->forActiveEvent())
             ->with(['ticket.ticketCategory', 'scanner'])
             ->orderByDesc('scanned_at')
             ->orderByDesc('id')
-            ->limit(10)
+            ->limit(20)
             ->get()
             ->map(fn (CheckInLog $log): array => [
                 'id' => $log->id,
@@ -165,24 +166,81 @@ class Dashboard extends Component
     }
 
     /**
-     * Users with the scanner role and their scan totals.
+     * Scan totals per scanner for the active event, keyed by scanner id.
+     *
+     * @return array<int, int>
+     */
+    private function scanTotalsByScanner(): array
+    {
+        $totals = CheckInLog::query()
+            ->whereNotNull('scanner_id')
+            ->whereHas('ticket', fn (Builder $query) => $query->forActiveEvent())
+            ->groupBy('scanner_id')
+            ->selectRaw('scanner_id, COUNT(*) as aggregate')
+            ->get()
+            ->pluck('aggregate', 'scanner_id')
+            ->all();
+
+        $normalized = [];
+
+        foreach ($totals as $scannerId => $count) {
+            $normalized[(int) $scannerId] = (int) $count;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Scanner accounts with their scan totals for the active event.
      *
      * @return array<int, array<string, string|int>>
      */
     #[Computed]
     public function scannerUsers(): array
     {
+        $totals = $this->scanTotalsByScanner();
+
         return User::query()
             ->where('role', UserRole::Scanner->value)
-            ->withCount('checkInLogs')
             ->orderBy('name')
             ->get()
             ->map(fn (User $user): array => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'scans' => (int) $user->check_in_logs_count,
+                'scans' => $totals[$user->id] ?? 0,
             ])
             ->all();
+    }
+
+    /**
+     * Scan volume per scanner, grouped from check_in_logs and ranked highest first.
+     *
+     * @return array<int, array{id: int, name: string, scans: int}>
+     */
+    #[Computed]
+    public function scannerActivity(): array
+    {
+        $totals = $this->scanTotalsByScanner();
+
+        if ($totals === []) {
+            return [];
+        }
+
+        $names = User::query()->whereKey(array_keys($totals))->pluck('name', 'id');
+
+        $activity = [];
+
+        foreach ($totals as $scannerId => $count) {
+            $activity[] = [
+                'id' => $scannerId,
+                'name' => (string) $names->get($scannerId, 'Scanner'),
+                'scans' => $count,
+            ];
+        }
+
+        usort($activity, fn (array $first, array $second): int => $second['scans'] <=> $first['scans']);
+
+        return $activity;
     }
 }
