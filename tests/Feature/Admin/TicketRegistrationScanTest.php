@@ -38,6 +38,16 @@ test('hardware scanner tetap memakai input keyboard dan enter', function () {
         ->assertSee('Input otomatis diproses setelah scanner mengirim Enter');
 });
 
+test('tombol scan ulang memakai reset tanpa restart kamera', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('admin.tickets.create'))
+        ->assertOk()
+        ->assertSee('resetScan')
+        ->assertSee('qr-camera:reset', false)
+        ->assertSee('qr-camera:rearm', false)
+        ->assertSee('activate-camera-button', false);
+});
+
 test('scanner tidak dapat akses', function () {
     $this->actingAs(User::factory()->scanner()->create())
         ->get(route('admin.tickets.create'))

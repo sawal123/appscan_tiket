@@ -1,4 +1,8 @@
-import qrCameraScanner, { QR_CAMERA_REARM_EVENT, QR_CAMERA_STOP_EVENT } from './components/qr-camera-scanner';
+import qrCameraScanner, {
+    QR_CAMERA_REARM_EVENT,
+    QR_CAMERA_RESET_EVENT,
+    QR_CAMERA_STOP_EVENT,
+} from './components/qr-camera-scanner';
 
 // Admin bundle. Alpine itself is provided by Livewire/Flux, so components are
 // registered through the `alpine:init` hook instead of importing Alpine here.
@@ -44,11 +48,21 @@ document.addEventListener('alpine:init', () => {
             this.$wire.call('register', code);
         },
 
+        // Fired after a ticket is saved: the camera keeps running.
         rearm() {
+            this.clearScan(QR_CAMERA_REARM_EVENT);
+        },
+
+        // Manual "Scan Ulang": also drops the duplicate scan protection.
+        resetScan() {
+            this.clearScan(QR_CAMERA_RESET_EVENT);
+        },
+
+        clearScan(eventName) {
             this.detectedCode = '';
             this.hardwareCode = '';
 
-            this.$dispatch(QR_CAMERA_REARM_EVENT);
+            this.$dispatch(eventName);
 
             if (this.$wire.scanMethod === 'device') {
                 this.focusHardwareInput();

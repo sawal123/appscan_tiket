@@ -55,16 +55,16 @@
                                 <td class="px-6 py-3.5">
                                     <div class="flex items-center justify-end gap-2">
                                         @if ($event->status !== \App\Enums\EventStatus::Active)
-                                            <x-admin.ui.button variant="success" size="icon" wire:click="activate({{ $event->id }})" data-testid="activate-event-{{ $event->id }}" aria-label="Aktifkan event" title="Aktifkan">
+                                            <x-admin.ui.button variant="success" size="icon" wire:click="activate({{ $event->id }})" target="activate({{ $event->id }})" data-testid="activate-event-{{ $event->id }}" aria-label="Aktifkan event" title="Aktifkan">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
                                                 <span class="sr-only">Aktifkan</span>
                                             </x-admin.ui.button>
                                         @endif
-                                        <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $event->id }})" data-testid="edit-event-{{ $event->id }}" aria-label="Edit event" title="Edit">
+                                        <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $event->id }})" target="edit({{ $event->id }})" data-testid="edit-event-{{ $event->id }}" aria-label="Edit event" title="Edit">
                                             <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                             <span class="sr-only">Edit</span>
                                         </x-admin.ui.button>
-                                        <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" wire:confirm="Hapus event ini?" data-testid="delete-event-{{ $event->id }}" aria-label="Hapus event" title="Hapus">
+                                        <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" data-testid="delete-event-{{ $event->id }}" aria-label="Hapus event" title="Hapus">
                                             <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                             <span class="sr-only">Hapus</span>
                                         </x-admin.ui.button>
@@ -92,16 +92,16 @@
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($event->status !== \App\Enums\EventStatus::Active)
-                                <x-admin.ui.button variant="success" size="icon" wire:click="activate({{ $event->id }})" aria-label="Aktifkan event" title="Aktifkan">
+                                <x-admin.ui.button variant="success" size="icon" wire:click="activate({{ $event->id }})" target="activate({{ $event->id }})" aria-label="Aktifkan event" title="Aktifkan">
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
                                     <span class="sr-only">Aktifkan</span>
                                 </x-admin.ui.button>
                             @endif
-                            <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $event->id }})" aria-label="Edit event" title="Edit">
+                            <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $event->id }})" target="edit({{ $event->id }})" aria-label="Edit event" title="Edit">
                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                 <span class="sr-only">Edit</span>
                             </x-admin.ui.button>
-                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" wire:confirm="Hapus event ini?" aria-label="Hapus event" title="Hapus">
+                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" aria-label="Hapus event" title="Hapus">
                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                 <span class="sr-only">Hapus</span>
                             </x-admin.ui.button>
@@ -159,7 +159,7 @@
 
             <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <x-admin.ui.button variant="outline" wire:click="closeModal">Batal</x-admin.ui.button>
-                <x-admin.ui.button type="submit" data-testid="event-submit-button">Simpan</x-admin.ui.button>
+                <x-admin.ui.button type="submit" target="save" data-testid="event-submit-button">Simpan</x-admin.ui.button>
             </div>
         </form>
     </x-admin.ui.modal>

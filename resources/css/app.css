@@ -75,6 +75,20 @@ select:focus[data-flux-control] {
     display: none !important;
 }
 
+/* Loading state for action buttons, driven by wire:loading.class in components/admin/ui/button.blade.php */
+.admin-button-spinner {
+    display: none;
+}
+
+.admin-button.is-loading .admin-button-spinner {
+    display: inline-flex;
+}
+
+/* Icon-only buttons have no room next to the icon, so the spinner replaces it. */
+.admin-button.is-icon.is-loading .admin-button-content {
+    display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
 
     *,

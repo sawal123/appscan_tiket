@@ -14,4 +14,6 @@
 - When starting feature work (or after finishing a slice), expects the branch to come off an up-to-date `main`: switch to `main`, `git pull`, then create the feature branch from it, then push with upstream tracking. Confidence: 0.8
 - Prefers fast-forward-only pulls (e.g. `git pull --ff-only origin main`) to keep history linear and avoid unintended merge commits. Confidence: 0.7
 - Runs destructive database commands (e.g. `migrate:fresh --seed`) against a temporary throwaway SQLite database instead of the dev database, so existing data isn't wiped. Confidence: 0.65
+- Expects runtime/client-side behavior (e.g. a loading spinner that appears while a request is in flight) to be proven in a real browser against the running app with actual requests — observing the DOM/classes during the request and a screenshot — not just via rendered-HTML or attribute assertions in Pest. Confidence: 0.6
+- Cleans up the throwaway scaffolding used for such verification before finishing: remove temporary debug tests/scripts, stop the local dev server, close the browser session, and delete the scratch database. Confidence: 0.55
 - Verifies seeders end-to-end by inspecting the resulting data (row counts, cross-table consistency, no duplicates) and re-running the seed to confirm idempotency, not just trusting a clean exit. Confidence: 0.6

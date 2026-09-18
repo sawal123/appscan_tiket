@@ -66,6 +66,7 @@
                 x-data="qrCameraScanner"
                 x-show="$wire.scanMethod === 'camera'"
                 x-on:qr-camera:rearm.window="rearm()"
+                x-on:qr-camera:reset.window="reset()"
                 x-on:qr-camera:stop.window="stop()"
                 x-on:keydown.escape.window="stop()"
             >
@@ -192,8 +193,8 @@
                 </div>
 
                 <div class="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end dark:border-slate-800">
-                    <x-admin.ui.button variant="outline" type="button" x-on:click="rearm()" data-testid="reset-scan-button">Scan Ulang</x-admin.ui.button>
-                    <x-admin.ui.button type="submit" data-testid="ticket-save-button">
+                    <x-admin.ui.button variant="outline" type="button" x-on:click="resetScan()" data-testid="reset-scan-button">Scan Ulang</x-admin.ui.button>
+                    <x-admin.ui.button type="submit" target="save" data-testid="ticket-save-button">
                         <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
                         Simpan Tiket
                     </x-admin.ui.button>

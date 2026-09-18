@@ -4,7 +4,14 @@
  */
 export const QR_CAMERA_SCANNED_EVENT = 'qr-camera:scanned';
 export const QR_CAMERA_REARM_EVENT = 'qr-camera:rearm';
+export const QR_CAMERA_RESET_EVENT = 'qr-camera:reset';
 export const QR_CAMERA_STOP_EVENT = 'qr-camera:stop';
+
+/**
+ * ZXing reports the same QR on many consecutive frames, so a successful read
+ * locks the scanner briefly to avoid emitting the same code repeatedly.
+ */
+const SCAN_COOLDOWN_MS = 1500;
 
 /**
  * @param {unknown} error
@@ -34,6 +41,9 @@ function describeError(error) {
 /**
  * Reusable Alpine component that owns the whole camera QR lifecycle:
  * start, stop, decode, permission errors, and emitting the decoded value.
+ *
+ * The camera keeps running after a successful read so the operator can scan the
+ * next ticket without activating it again.
  */
 export default function qrCameraScanner() {
     return {
@@ -41,7 +51,8 @@ export default function qrCameraScanner() {
         cameraLoading: false,
         code: '',
         error: '',
-        autoRestart: false,
+        lastCode: '',
+        lockedUntil: 0,
         reader: null,
         controls: null,
 
@@ -71,7 +82,7 @@ export default function qrCameraScanner() {
             }
 
             if (this.code !== '') {
-                return 'QR berhasil dibaca, periksa lalu simpan tiket';
+                return 'QR berhasil dibaca, kamera tetap aktif';
             }
 
             if (this.cameraActive) {
@@ -110,7 +121,8 @@ export default function qrCameraScanner() {
                 );
 
                 this.cameraActive = true;
-                this.autoRestart = true;
+                this.lastCode = '';
+                this.lockedUntil = 0;
             } catch (error) {
                 this.error = describeError(error);
 
@@ -120,21 +132,32 @@ export default function qrCameraScanner() {
             }
         },
 
+        /**
+         * Explicit stop: releases the camera, e.g. the operator pressed "Hentikan Kamera".
+         */
         stop() {
-            this.autoRestart = false;
-
             this.releaseCamera();
         },
 
+        /**
+         * Clears the read result after a ticket was registered. The just registered
+         * QR stays suppressed, so it cannot be captured again while it is still in
+         * front of the camera, but the camera itself keeps running.
+         */
         rearm() {
-            const restart = this.autoRestart;
-
             this.code = '';
             this.error = '';
+        },
 
-            if (restart) {
-                this.start();
-            }
+        /**
+         * Manual "Scan Ulang": clears the result and the duplicate protection so the
+         * QR currently in front of the camera can be read again.
+         */
+        reset() {
+            this.code = '';
+            this.error = '';
+            this.lastCode = '';
+            this.lockedUntil = 0;
         },
 
         releaseCamera() {
@@ -147,14 +170,28 @@ export default function qrCameraScanner() {
         handleResult(rawValue) {
             const code = String(rawValue ?? '').trim();
 
-            // Ignore empty frames and repeat reads until the form is re-armed after a save.
-            if (code === '' || this.code !== '') {
+            if (code === '' || ! this.cameraActive) {
+                return;
+            }
+
+            // One capture per cycle: the result has to be saved or reset first.
+            if (this.code !== '') {
+                return;
+            }
+
+            // Debounce the burst of frames ZXing reports for a single QR.
+            if (Date.now() < this.lockedUntil) {
+                return;
+            }
+
+            // A QR that is still in front of the camera must not emit repeatedly.
+            if (code === this.lastCode) {
                 return;
             }
 
             this.code = code;
-
-            this.releaseCamera();
+            this.lastCode = code;
+            this.lockedUntil = Date.now() + SCAN_COOLDOWN_MS;
 
             this.$dispatch(QR_CAMERA_SCANNED_EVENT, { code });
         },
