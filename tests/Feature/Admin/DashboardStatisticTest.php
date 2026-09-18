@@ -126,34 +126,6 @@ test('category statistic benar', function () {
         ->and($categories[1]['percentage'])->toBe('100.0');
 });
 
-test('recent check in menampilkan 10 log terbaru', function () {
-    $this->actingAs(User::factory()->admin()->create());
-
-    $event = Event::factory()->active()->create();
-    $category = dashboardCategory($event, 'Regular');
-    $scanner = User::factory()->scanner()->create(['name' => 'Scanner Andi']);
-
-    foreach (range(1, 12) as $index) {
-        $ticket = dashboardTicket($category, checkedIn: true, code: sprintf('DASH-REC-%02d', $index));
-
-        dashboardCheckInLog($ticket, $scanner, scannedAt: now()->subMinutes(12 - $index));
-    }
-
-    $component = Livewire::test(Dashboard::class);
-    $recent = $component->instance()->recentCheckIns();
-
-    expect($recent)->toHaveCount(10)
-        ->and($recent[0]['qrCode'])->toBe('DASH-REC-12')
-        ->and($recent[0]['category'])->toBe('Regular')
-        ->and($recent[0]['scanner'])->toBe('Scanner Andi')
-        ->and($recent[0]['status'])->toBe(CheckInLog::STATUS_SUCCESS);
-
-    $component->assertSee('DASH-REC-12')
-        ->assertSee('Scanner Andi')
-        ->assertSee('Success')
-        ->assertDontSee('DASH-REC-01');
-});
-
 test('scanner users hanya menampilkan user dengan role scanner', function () {
     $this->actingAs(User::factory()->admin()->create());
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Scanner\ScannerController;
 use App\Livewire\Admin\CheckInHistory as AdminCheckInHistory;
+use App\Livewire\Admin\CheckInReport as AdminCheckInReport;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Events as AdminEvents;
 use App\Livewire\Admin\ScannerCreate as AdminScannerCreate;
@@ -24,6 +25,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::livewire('admin/tickets/create', AdminTicketCreate::class)->name('admin.tickets.create');
     Route::livewire('admin/ticket-categories', AdminTicketCategories::class)->name('admin.ticket-categories');
     Route::livewire('admin/check-in-history', AdminCheckInHistory::class)->name('admin.check-in-history');
+    Route::livewire('admin/reports/check-in', AdminCheckInReport::class)->name('admin.reports.check-in');
     Route::livewire('admin/scanners', AdminScanners::class)->name('admin.scanners');
     Route::livewire('admin/scanners/create', AdminScannerCreate::class)->name('admin.scanners.create');
 });

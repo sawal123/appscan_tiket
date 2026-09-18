@@ -46,6 +46,13 @@
             'testId' => 'nav-check-in-history-link',
             'icon' => 'history',
         ],
+        [
+            'label' => 'Laporan Check-in',
+            'href' => route('admin.reports.check-in'),
+            'active' => request()->routeIs('admin.reports.check-in'),
+            'testId' => 'nav-check-in-report-link',
+            'icon' => 'report',
+        ],
         ['label' => 'Pengaturan', 'href' => '#pengaturan', 'testId' => 'nav-settings-link', 'icon' => 'settings'],
     ];
 @endphp
@@ -96,6 +103,10 @@
 
                             @case('registration')
                                 <svg aria-hidden="true" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5a2 2 0 0 1 2-2h4v6H3V5Zm12-2h4a2 2 0 0 1 2 2v4h-6V3ZM3 15h6v6H5a2 2 0 0 1-2-2v-4Zm12 0h2v2h-2zm4 0h2v6h-6v-2h4zM15 3v6h6"/><path d="M12 5v14M5 12h14"/></svg>
+                                @break
+
+                            @case('report')
+                                <svg aria-hidden="true" class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5"/><path d="M5 3h9l5 5v13H5V3Z"/><path d="M9 13v5M12.5 10v8M16 15v3"/></svg>
                                 @break
 
                             @case('categories')

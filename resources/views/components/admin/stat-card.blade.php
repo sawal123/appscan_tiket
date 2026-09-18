@@ -29,6 +29,11 @@
             'subtitle' => 'text-indigo-600 dark:text-indigo-400',
             'icon' => 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300',
         ],
+        'red' => [
+            'bar' => 'bg-red-500',
+            'subtitle' => 'text-red-600 dark:text-red-400',
+            'icon' => 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-300',
+        ],
     ][$accent] ?? [
         'bar' => 'bg-blue-500',
         'subtitle' => 'text-blue-600 dark:text-blue-400',

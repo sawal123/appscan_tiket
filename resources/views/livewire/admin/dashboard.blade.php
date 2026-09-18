@@ -4,6 +4,7 @@
     $ticketCategories = $this->ticketCategories;
     $recentCheckIns = $this->recentCheckIns;
     $scannerUsers = $this->scannerUsers;
+    $scannerActivity = $this->scannerActivity;
 
     $checkInPercentage = $statistics['checkedInPercentage'];
     $remainingPercentage = $statistics['remainingPercentage'];
@@ -146,7 +147,7 @@
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6 dark:border-slate-800">
                     <div>
                         <h2 id="recent-title" class="text-lg font-extrabold">Verifikasi Terbaru</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">10 aktivitas check-in terakhir</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">20 aktivitas check-in terakhir</p>
                     </div>
                     <a href="{{ route('admin.check-in-history') }}" data-testid="view-all-verifications-link" class="inline-flex min-h-10 items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400">Lihat Semua<svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
                 </div>
@@ -219,6 +220,27 @@
                         </div>
                     @empty
                         <p data-testid="scanner-user-empty" class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada akun scanner.</p>
+                    @endforelse
+                </div>
+            </x-admin.ui.card>
+
+            <x-admin.ui.card :padded="true" data-testid="scanner-activity-section" aria-labelledby="scanner-activity-title">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 id="scanner-activity-title" class="text-lg font-extrabold">Aktivitas Scanner</h2>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Jumlah scan per petugas</p>
+                    </div>
+                    <x-admin.ui.badge variant="blue" data-testid="scanner-activity-count">{{ count($scannerActivity) }} Aktif</x-admin.ui.badge>
+                </div>
+                <div class="mt-4 divide-y divide-slate-100 dark:divide-slate-800">
+                    @forelse ($scannerActivity as $index => $activity)
+                        <div data-testid="scanner-activity-{{ $activity['id'] }}" class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                            <span class="grid size-6 shrink-0 place-items-center rounded-md bg-slate-100 text-[10px] font-extrabold text-slate-500 dark:bg-slate-800 dark:text-slate-300">{{ $index + 1 }}</span>
+                            <p class="min-w-0 flex-1 truncate text-sm font-bold">{{ $activity['name'] }}</p>
+                            <p class="text-sm font-extrabold" data-testid="scanner-activity-scans-{{ $activity['id'] }}">{{ $activity['scans'] }} <span class="text-xs font-medium text-slate-400">scan</span></p>
+                        </div>
+                    @empty
+                        <p data-testid="scanner-activity-empty" class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada aktivitas scan.</p>
                     @endforelse
                 </div>
             </x-admin.ui.card>

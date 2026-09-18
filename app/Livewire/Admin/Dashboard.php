@@ -140,7 +140,7 @@ class Dashboard extends Component
     }
 
     /**
-     * The ten most recent check-in attempts.
+     * The twenty most recent check-in attempts.
      *
      * @return array<int, array<string, string|int>>
      */
@@ -151,7 +151,7 @@ class Dashboard extends Component
             ->with(['ticket.ticketCategory', 'scanner'])
             ->orderByDesc('scanned_at')
             ->orderByDesc('id')
-            ->limit(10)
+            ->limit(20)
             ->get()
             ->map(fn (CheckInLog $log): array => [
                 'id' => $log->id,
@@ -184,5 +184,42 @@ class Dashboard extends Component
                 'scans' => (int) $user->check_in_logs_count,
             ])
             ->all();
+    }
+
+    /**
+     * Scan volume per scanner, grouped from check_in_logs and ranked highest first.
+     *
+     * @return array<int, array{id: int, name: string, scans: int}>
+     */
+    #[Computed]
+    public function scannerActivity(): array
+    {
+        $totals = CheckInLog::query()
+            ->whereNotNull('scanner_id')
+            ->groupBy('scanner_id')
+            ->selectRaw('scanner_id, COUNT(*) as aggregate')
+            ->get()
+            ->pluck('aggregate', 'scanner_id')
+            ->all();
+
+        if ($totals === []) {
+            return [];
+        }
+
+        $names = User::query()->whereKey(array_keys($totals))->pluck('name', 'id');
+
+        $activity = [];
+
+        foreach ($totals as $scannerId => $count) {
+            $activity[] = [
+                'id' => (int) $scannerId,
+                'name' => (string) $names->get((int) $scannerId, 'Scanner'),
+                'scans' => (int) $count,
+            ];
+        }
+
+        usort($activity, fn (array $first, array $second): int => $second['scans'] <=> $first['scans']);
+
+        return $activity;
     }
 }
