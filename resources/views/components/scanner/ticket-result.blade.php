@@ -41,14 +41,13 @@
                 <div class="result-status result-status--success">
                     <span class="result-status__icon"><i data-lucide="circle-check-big"></i></span>
                     <p class="result-status__kicker">Check-in Selesai</p>
-                    <h2 data-testid="success-ticket-title">Tiket Berhasil Diverifikasi</h2>
-                    <p class="result-status__description" data-testid="success-ticket-description">Gate siap menerima pengunjung berikutnya.</p>
+                    <h2 data-testid="success-ticket-title">Check-in berhasil</h2>
+                    <p class="result-status__description" data-testid="success-ticket-description">Scanner siap untuk tiket berikutnya.</p>
                 </div>
 
                 <dl class="result-details" data-testid="success-ticket-details">
                     <div><dt>Kategori</dt><dd data-testid="success-ticket-category" x-text="result.category ?? '-'"></dd></div>
                     <div><dt>Waktu</dt><dd data-testid="success-ticket-time" x-text="result.checked_in_time ?? '-'"></dd></div>
-                    <div><dt>Gate</dt><dd data-testid="success-ticket-gate" x-text="result.gate ?? '-'"></dd></div>
                     <div><dt>Scanner</dt><dd data-testid="success-ticket-scanner" x-text="result.scanner ?? '-'"></dd></div>
                 </dl>
 
@@ -61,15 +60,14 @@
                 <div class="result-status result-status--warning">
                     <span class="result-status__icon"><i data-lucide="history"></i></span>
                     <p class="result-status__kicker">Perlu Perhatian</p>
-                    <h2 data-testid="used-ticket-title">Tiket Sudah Digunakan</h2>
+                    <h2 data-testid="used-ticket-title">Ticket sudah digunakan</h2>
                     <p class="result-status__description" data-testid="used-ticket-description">Tiket ini telah tercatat masuk sebelumnya.</p>
                 </div>
 
                 <dl class="result-details" data-testid="used-ticket-details">
                     <div><dt>Kategori</dt><dd data-testid="used-ticket-category" x-text="result.category ?? '-'"></dd></div>
-                    <div><dt>Diverifikasi</dt><dd data-testid="used-ticket-time" x-text="usedAtLabel"></dd></div>
-                    <div><dt>Gate</dt><dd data-testid="used-ticket-gate" x-text="result.gate ?? '-'"></dd></div>
-                    <div><dt>Scanner</dt><dd data-testid="used-ticket-scanner" x-text="result.scanner ?? '-'"></dd></div>
+                    <div><dt>Waktu check-in</dt><dd data-testid="used-ticket-time" x-text="usedAtLabel"></dd></div>
+                    <div><dt>Scanner sebelumnya</dt><dd data-testid="used-ticket-scanner" x-text="result.scanner ?? '-'"></dd></div>
                 </dl>
 
                 <div class="result-actions">
@@ -81,7 +79,7 @@
                 <div class="result-status result-status--danger">
                     <span class="result-status__icon"><i data-lucide="circle-x"></i></span>
                     <p class="result-status__kicker">QR Tidak Valid</p>
-                    <h2 data-testid="invalid-ticket-title">Tiket Tidak Ditemukan</h2>
+                    <h2 data-testid="invalid-ticket-title">Tiket tidak ditemukan</h2>
                     <p class="result-status__description" data-testid="invalid-ticket-description">QR ini tidak terdaftar pada event aktif.</p>
                 </div>
 

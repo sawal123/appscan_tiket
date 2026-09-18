@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Scanner;
 
 use App\Http\Controllers\Controller;
-use App\Models\CheckInLog;
 use App\Models\Event;
 use App\Models\Ticket;
+use App\Models\TicketCategory;
 use App\Services\TicketCheckInService;
 use App\Services\TicketValidationService;
 use Illuminate\Http\JsonResponse;
@@ -26,52 +26,37 @@ class ScannerController extends Controller
         ]);
     }
 
-    public function verified(): View
+    public function verified(Request $request): View
     {
-        $loggedTickets = CheckInLog::query()
-            ->where('status', CheckInLog::STATUS_SUCCESS)
-            ->whereHas('ticket', fn ($query) => $query->forActiveEvent())
-            ->with(['ticket.ticketCategory.event'])
-            ->orderByDesc('scanned_at')
-            ->get()
-            ->map(fn (CheckInLog $log): array => [
-                'code' => $log->ticket->qr_code,
-                'category' => $log->ticket?->ticketCategory?->name,
-                'time' => $log->scanned_at->format('H:i'),
-                'scanned_at' => $log->scanned_at,
-                'gate' => $log->ticket?->ticketCategory?->event?->location,
-            ]);
+        $activeEvent = $this->activeEvent();
+        $search = trim((string) $request->query('search', ''));
+        $categoryId = $request->integer('category') ?: null;
 
-        $legacyTickets = Ticket::query()
+        $tickets = Ticket::query()
+            ->select(['id', 'event_id', 'ticket_category_id', 'qr_code', 'checked_in_at', 'checked_in_by'])
             ->forActiveEvent()
             ->whereNotNull('checked_in_at')
-            ->whereDoesntHave('checkInLogs', fn ($query) => $query->where('status', CheckInLog::STATUS_SUCCESS))
-            ->with('ticketCategory.event')
+            ->with(['ticketCategory:id,name,event_id', 'checkedInBy:id,name'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where('qr_code', 'like', '%'.Ticket::normalizeQrCode($search).'%');
+            })
+            ->when($categoryId, fn ($query) => $query->where('ticket_category_id', $categoryId))
             ->orderByDesc('checked_in_at')
-            ->get()
-            ->map(fn (Ticket $ticket): array => [
-                'code' => $ticket->qr_code,
-                'category' => $ticket->ticketCategory?->name,
-                'time' => $ticket->checked_in_at?->format('H:i'),
-                'scanned_at' => $ticket->checked_in_at,
-                'gate' => $ticket->ticketCategory?->event?->location,
-            ]);
-
-        $tickets = collect($loggedTickets->all())
-            ->merge($legacyTickets)
-            ->sortByDesc('scanned_at')
-            ->map(fn (array $ticket): array => [
-                'code' => $ticket['code'],
-                'category' => $ticket['category'],
-                'time' => $ticket['time'],
-                'gate' => $ticket['gate'],
-            ])
-            ->values()
-            ->all();
+            ->paginate(15)
+            ->withQueryString();
 
         return view('scanner.verified', [
-            'activeEvent' => $this->activeEvent(),
+            'activeEvent' => $activeEvent,
             'tickets' => $tickets,
+            'categories' => $activeEvent
+                ? TicketCategory::query()
+                    ->select(['id', 'name'])
+                    ->where('event_id', $activeEvent->id)
+                    ->orderBy('name')
+                    ->get()
+                : collect(),
+            'search' => $search,
+            'categoryFilter' => $categoryId,
             ...$this->scannerContext(),
         ]);
     }
