@@ -62,6 +62,7 @@ class TicketValidationService
 
         return [
             'status' => $status,
+            'message' => $this->messageFor($status),
             'code' => $code,
             'category' => $ticket?->ticketCategory?->name,
             'event' => $ticket?->event->name ?? $ticket?->ticketCategory?->event->name,
@@ -71,5 +72,19 @@ class TicketValidationService
             'scanner' => $operatorName ?? $ticket?->checkedInBy?->name,
             'gate' => $ticket?->ticketCategory?->event?->location,
         ];
+    }
+
+    /**
+     * Operator facing message for a scan status.
+     */
+    private function messageFor(string $status): string
+    {
+        return match ($status) {
+            self::VALID => 'Tiket aktif dan belum digunakan.',
+            self::USED => 'Tiket ini sudah digunakan sebelumnya.',
+            self::NOT_FOUND => 'QR ini tidak terdaftar pada event aktif.',
+            // Anything else is a completed check-in.
+            default => 'Check-in berhasil. Siap untuk tiket berikutnya.',
+        };
     }
 }

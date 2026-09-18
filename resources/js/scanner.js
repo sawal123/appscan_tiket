@@ -37,6 +37,13 @@ import {
 
 const THEME_KEY = 'ticket-scanner-theme';
 
+// A ticket that was just handled stays ignored for a while, because it is usually
+// still in front of the camera. Other tickets can be scanned immediately.
+const RESCAN_COOLDOWN_MS = 4000;
+
+// How long the success result stays on screen before the scanner is armed again.
+const SUCCESS_SHEET_MS = 2200;
+
 // Only the icons referenced by scanner markup are bundled, keyed by their PascalCase name.
 const icons = {
     ArrowRight,
@@ -155,7 +162,11 @@ document.addEventListener('alpine:init', () => {
 
         deviceCode: '',
 
-        get usedAtLabel() {
+        lastHandledCode: '',
+        rescanAfter: 0,
+        audioContext: null,
+
+        get checkedInLabel() {
             const date = this.result?.checked_in_date;
             const time = this.result?.checked_in_time;
 
@@ -163,7 +174,7 @@ document.addEventListener('alpine:init', () => {
                 return '-';
             }
 
-            return time ? `${date} · ${time}` : date;
+            return time ? `${date} ${time}` : date;
         },
 
         init() {
@@ -347,6 +358,11 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            // Ignore the ticket that was just handled, but only that exact code.
+            if (code === this.lastHandledCode && Date.now() < this.rescanAfter) {
+                return;
+            }
+
             if (! this.$store.connection.online) {
                 this.sheet = 'offline';
                 this.$store.toasts.add('Koneksi internet terputus', 'warning');
@@ -371,9 +387,11 @@ document.addEventListener('alpine:init', () => {
                     this.sheet = 'valid';
                 } else if (result.status === 'used') {
                     this.sheet = 'used';
+                    this.feedback('warning');
                     this.$store.toasts.add('Tiket sudah digunakan', 'warning');
                 } else {
                     this.sheet = 'invalid';
+                    this.feedback('danger');
                     this.$store.toasts.add('Tiket tidak ditemukan', 'danger');
                 }
             } catch (error) {
@@ -397,17 +415,20 @@ document.addEventListener('alpine:init', () => {
 
                 if (result.status === 'success') {
                     this.sheet = 'success';
+                    this.feedback('success');
                     this.$store.toasts.add('Check-in berhasil', 'success');
                     this.successResetTimer = window.setTimeout(() => {
                         if (this.sheet === 'success') {
                             this.closeSheet();
                         }
-                    }, 1400);
+                    }, SUCCESS_SHEET_MS);
                 } else if (result.status === 'used') {
                     this.sheet = 'used';
+                    this.feedback('warning');
                     this.$store.toasts.add('Tiket sudah digunakan', 'warning');
                 } else {
                     this.sheet = 'invalid';
+                    this.feedback('danger');
                     this.$store.toasts.add('Tiket tidak ditemukan', 'danger');
                 }
             } catch (error) {
@@ -424,12 +445,65 @@ document.addEventListener('alpine:init', () => {
                 this.successResetTimer = null;
             }
 
+            // Remember the code just handled; only this exact code is suppressed.
+            this.lastHandledCode = String(this.result?.code ?? '');
+            this.rescanAfter = Date.now() + RESCAN_COOLDOWN_MS;
+
             this.sheet = null;
             this.busy = false;
             this.confirming = false;
             this.result = {};
 
             this.refocus();
+        },
+
+        /**
+         * Sound + haptics for the operator. Both APIs are optional and are skipped
+         * silently when the browser does not support them.
+         */
+        feedback(type) {
+            this.vibrate(type);
+
+            try {
+                const Context = window.AudioContext || window.webkitAudioContext;
+
+                if (! Context) {
+                    return;
+                }
+
+                this.audioContext = this.audioContext ?? new Context();
+
+                if (this.audioContext.state === 'suspended') {
+                    Promise.resolve(this.audioContext.resume?.()).catch(() => {});
+                }
+
+                const tones = { success: 1046, warning: 660, danger: 311 };
+                const oscillator = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+
+                oscillator.type = type === 'success' ? 'sine' : 'square';
+                oscillator.frequency.value = tones[type] ?? tones.warning;
+                gain.gain.value = 0.05;
+
+                oscillator.connect(gain);
+                gain.connect(this.audioContext.destination);
+                oscillator.start();
+                oscillator.stop(this.audioContext.currentTime + (type === 'success' ? 0.18 : 0.3));
+            } catch (error) {
+                // Audio feedback is a nice-to-have.
+            }
+        },
+
+        vibrate(type) {
+            if (typeof navigator.vibrate !== 'function') {
+                return;
+            }
+
+            try {
+                navigator.vibrate(type === 'success' ? 70 : [50, 60, 50]);
+            } catch (error) {
+                // Haptics are a nice-to-have.
+            }
         },
 
         refocus() {
