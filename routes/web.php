@@ -6,6 +6,7 @@ use App\Livewire\Admin\CheckInReport as AdminCheckInReport;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Events as AdminEvents;
 use App\Livewire\Admin\ScannerCreate as AdminScannerCreate;
+use App\Livewire\Admin\ScannerMonitoring as AdminScannerMonitoring;
 use App\Livewire\Admin\Scanners as AdminScanners;
 use App\Livewire\Admin\TicketCategories as AdminTicketCategories;
 use App\Livewire\Admin\TicketCreate as AdminTicketCreate;
@@ -28,11 +29,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::livewire('admin/reports/check-in', AdminCheckInReport::class)->name('admin.reports.check-in');
     Route::livewire('admin/scanners', AdminScanners::class)->name('admin.scanners');
     Route::livewire('admin/scanners/create', AdminScannerCreate::class)->name('admin.scanners.create');
+    Route::livewire('admin/scanners/monitoring', AdminScannerMonitoring::class)->name('admin.scanners.monitoring');
 });
 
 Route::middleware(['auth', 'role:admin,scanner'])->prefix('scanner')->group(function () {
     Route::get('/', [ScannerController::class, 'index'])->name('scanner.index');
     Route::get('verified', [ScannerController::class, 'verified'])->name('scanner.verified');
+    Route::post('heartbeat', [ScannerController::class, 'heartbeat'])->name('scanner.heartbeat');
     Route::post('validate', [ScannerController::class, 'validateTicket'])->name('scanner.validate');
     Route::post('check-in', [ScannerController::class, 'checkIn'])->name('scanner.check-in');
 });

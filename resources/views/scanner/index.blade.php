@@ -8,6 +8,7 @@
         x-data="scannerApp({
             validateUrl: '{{ route('scanner.validate') }}',
             checkInUrl: '{{ route('scanner.check-in') }}',
+            heartbeatUrl: '{{ route('scanner.heartbeat') }}',
         })"
         x-on:keydown.escape.window="manualOpen ? closeManual() : (sheet ? closeSheet() : null)"
     >

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Scanner;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\ScannerSession;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Services\TicketCheckInService;
@@ -74,9 +75,33 @@ class ScannerController extends Controller
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:255'],
+            'device_id' => ['nullable', 'string', 'max:255'],
+            'device_name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        return response()->json($checkIn->checkIn($validated['code'], $request->user()));
+        $payload = $checkIn->checkIn($validated['code'], $request->user());
+
+        if ($payload['status'] === TicketCheckInService::SUCCESS) {
+            $this->touchScannerSession($request, $validated, true);
+        }
+
+        return response()->json($payload);
+    }
+
+    public function heartbeat(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'device_id' => ['nullable', 'string', 'max:255'],
+            'device_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $session = $this->touchScannerSession($request, $validated);
+
+        return response()->json([
+            'status' => 'ok',
+            'session_id' => $session->id,
+            'last_seen_at' => $session->last_seen_at->toIso8601String(),
+        ]);
     }
 
     private function activeEvent(): ?Event
@@ -107,5 +132,42 @@ class ScannerController extends Controller
             'scannerInitials' => $user->initials(),
             'scannerRole' => ucfirst($user->role->value),
         ];
+    }
+
+    /**
+     * @param  array{device_id?: string|null, device_name?: string|null}  $data
+     */
+    private function touchScannerSession(Request $request, array $data, bool $markScan = false): ScannerSession
+    {
+        $user = $request->user();
+        $deviceId = filled($data['device_id'] ?? null) ? (string) $data['device_id'] : null;
+        $userAgent = substr((string) $request->userAgent(), 0, 1000);
+        $ipAddress = $request->ip();
+
+        $query = ScannerSession::query()->where('user_id', $user->id);
+
+        if ($deviceId !== null) {
+            $query->where('device_id', $deviceId);
+        } else {
+            $query
+                ->whereNull('device_id')
+                ->where('ip_address', $ipAddress)
+                ->where('user_agent', $userAgent);
+        }
+
+        $session = $query->firstOrNew([
+            'user_id' => $user->id,
+            'device_id' => $deviceId,
+        ]);
+
+        $session->forceFill([
+            'device_name' => filled($data['device_name'] ?? null) ? (string) $data['device_name'] : $session->device_name,
+            'last_seen_at' => now(),
+            'last_scan_at' => $markScan ? now() : $session->last_scan_at,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+        ])->save();
+
+        return $session;
     }
 }

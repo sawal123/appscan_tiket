@@ -6,6 +6,7 @@ use App\Enums\EventStatus;
 use App\Enums\UserRole;
 use App\Models\CheckInLog;
 use App\Models\Event;
+use App\Models\ScannerSession;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -211,6 +212,29 @@ class Dashboard extends Component
                 'scans' => $totals[$user->id] ?? 0,
             ])
             ->all();
+    }
+
+    /**
+     * Online scanner sessions compared to scanner accounts.
+     *
+     * @return array{online: int, total: int}
+     */
+    #[Computed]
+    public function scannerSessionStats(): array
+    {
+        $total = User::query()
+            ->where('role', UserRole::Scanner->value)
+            ->count();
+
+        $online = ScannerSession::query()
+            ->where('last_seen_at', '>=', now()->subMinutes(ScannerSession::ONLINE_THRESHOLD_MINUTES))
+            ->distinct('user_id')
+            ->count('user_id');
+
+        return [
+            'online' => $online,
+            'total' => $total,
+        ];
     }
 
     /**
