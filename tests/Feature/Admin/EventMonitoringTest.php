@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\EventStatus;
 use App\Livewire\Admin\CheckInReport;
 use App\Livewire\Admin\Dashboard;
 use App\Models\CheckInLog;
@@ -181,6 +182,51 @@ test('kategori statistik benar', function () {
         ->and($breakdown[1]['total'])->toBe(1)
         ->and($breakdown[1]['checkedIn'])->toBe(1)
         ->and($breakdown[1]['percentage'])->toBe('100.0');
+});
+
+test('data monitoring hanya berasal dari event aktif', function () {
+    $previousEvent = Event::factory()->create(['name' => 'Event Sebelumnya', 'status' => EventStatus::Completed]);
+    $activeEvent = monitorEvent('Event Aktif');
+
+    $previousCategory = monitorCategory($previousEvent, 'Regular');
+    $activeCategory = monitorCategory($activeEvent, 'Regular');
+
+    $scanner = User::factory()->scanner()->create(['name' => 'Scanner Andi']);
+
+    $previousTicket = monitorTicket($previousCategory, checkedIn: true, code: 'EVENT-A-1');
+    $activeTicket = monitorTicket($activeCategory, checkedIn: true, code: 'EVENT-B-1');
+
+    monitorLog($previousTicket, $scanner, CheckInLog::STATUS_SUCCESS, scannedAt: now()->subMinutes(5));
+    monitorLog($activeTicket, $scanner, CheckInLog::STATUS_SUCCESS, scannedAt: now());
+
+    // Both logs exist; only the active event's log may surface in monitoring.
+    expect(CheckInLog::count())->toBe(2);
+
+    $this->actingAs(User::factory()->admin()->create());
+
+    $dashboard = Livewire::test(Dashboard::class);
+    $recent = $dashboard->instance()->recentCheckIns();
+
+    expect($recent)->toHaveCount(1)
+        ->and($recent[0]['qrCode'])->toBe('EVENT-B-1');
+
+    $activity = $dashboard->instance()->scannerActivity();
+
+    expect($activity)->toHaveCount(1)
+        ->and($activity[0]['name'])->toBe('Scanner Andi')
+        ->and($activity[0]['scans'])->toBe(1);
+
+    $dashboard->assertSee('EVENT-B-1')
+        ->assertDontSee('EVENT-A-1');
+
+    $report = Livewire::test(CheckInReport::class);
+
+    expect($report->instance()->summary()['success'])->toBe(1);
+
+    $scanners = $report->instance()->scannerBreakdown();
+
+    expect($scanners)->toHaveCount(1)
+        ->and($scanners[0]['scans'])->toBe(1);
 });
 
 test('filter hari ini bekerja', function () {

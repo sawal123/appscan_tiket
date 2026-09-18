@@ -148,6 +148,7 @@ class Dashboard extends Component
     public function recentCheckIns(): array
     {
         return CheckInLog::query()
+            ->whereHas('ticket', fn (Builder $query) => $query->forActiveEvent())
             ->with(['ticket.ticketCategory', 'scanner'])
             ->orderByDesc('scanned_at')
             ->orderByDesc('id')
@@ -196,6 +197,7 @@ class Dashboard extends Component
     {
         $totals = CheckInLog::query()
             ->whereNotNull('scanner_id')
+            ->whereHas('ticket', fn (Builder $query) => $query->forActiveEvent())
             ->groupBy('scanner_id')
             ->selectRaw('scanner_id, COUNT(*) as aggregate')
             ->get()

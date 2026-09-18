@@ -38,14 +38,35 @@ class CheckInReport extends Component
     }
 
     /**
+     * Scans tied to a ticket of the active event. Invalid scans carry no ticket,
+     * so they can never be attributed to an event.
+     *
      * @return Builder<CheckInLog>
      */
-    private function scanQuery(): Builder
+    private function eventScanQuery(): Builder
     {
-        return CheckInLog::query()->when(
-            $this->period === self::PERIOD_TODAY,
-            fn (Builder $query) => $query->where('scanned_at', '>=', now()->startOfDay()),
-        );
+        return CheckInLog::query()
+            ->whereHas('ticket', fn (Builder $query) => $query->forActiveEvent())
+            ->when(
+                $this->period === self::PERIOD_TODAY,
+                fn (Builder $query) => $query->where('scanned_at', '>=', now()->startOfDay()),
+            );
+    }
+
+    /**
+     * Invalid scans are counted for the period only, because they have no ticket
+     * and therefore no event to attribute them to.
+     *
+     * @return Builder<CheckInLog>
+     */
+    private function invalidScanQuery(): Builder
+    {
+        return CheckInLog::query()
+            ->where('status', CheckInLog::STATUS_INVALID)
+            ->when(
+                $this->period === self::PERIOD_TODAY,
+                fn (Builder $query) => $query->where('scanned_at', '>=', now()->startOfDay()),
+            );
     }
 
     /**
@@ -56,7 +77,7 @@ class CheckInReport extends Component
     #[Computed]
     public function summary(): array
     {
-        $counts = $this->scanQuery()
+        $counts = $this->eventScanQuery()
             ->groupBy('status')
             ->selectRaw('status, COUNT(*) as aggregate')
             ->get()
@@ -69,7 +90,7 @@ class CheckInReport extends Component
             'total' => Ticket::query()->forActiveEvent()->count(),
             'success' => $countFor(CheckInLog::STATUS_SUCCESS),
             'alreadyCheckedIn' => $countFor(CheckInLog::STATUS_ALREADY_CHECKED_IN),
-            'invalid' => $countFor(CheckInLog::STATUS_INVALID),
+            'invalid' => $this->invalidScanQuery()->count(),
         ];
     }
 
@@ -129,7 +150,7 @@ class CheckInReport extends Component
     #[Computed]
     public function scannerBreakdown(): array
     {
-        $totals = $this->scanQuery()
+        $totals = $this->eventScanQuery()
             ->whereNotNull('scanner_id')
             ->groupBy('scanner_id')
             ->selectRaw('scanner_id, COUNT(*) as aggregate')

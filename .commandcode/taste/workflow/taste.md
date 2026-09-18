@@ -1,6 +1,7 @@
 # Workflow Preferences
 
 - Requires automated tests with Pest for new work, covering authorization (guests/scanner/admin), CRUD, validation, and edge cases. Confidence: 0.9
+- For bug fixes expects an explicit regression test that reproduces the reported scenario (e.g. Event A has check-ins, Event B is active, and Event B's dashboard/report must not show Event A's log), usually proving the excluded data is still present in the database so the test fails only because of the scoping. Confidence: 0.7
 - Validation workflow order: run migration, then targeted/new tests, then regression tests, then the full `php artisan test` suite. Confidence: 0.9
 - Runs Pint on changed PHP files as part of finishing. Confidence: 0.85
 - Runs `npm run build` only when frontend assets actually changed. Confidence: 0.85
