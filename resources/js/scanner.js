@@ -34,7 +34,12 @@ import {
     WifiOff,
     X,
 } from 'lucide';
-import { createQrCodeReader } from './components/qr-camera-scanner';
+import {
+    applySupportedCameraOptimizations,
+    createCameraConstraints,
+    createQrCodeReader,
+    waitForCameraWarmUp,
+} from './components/qr-camera-scanner';
 
 const THEME_KEY = 'ticket-scanner-theme';
 
@@ -149,8 +154,10 @@ document.addEventListener('alpine:init', () => {
         cameraLoading: false,
         cameraMessageTitle: 'Kamera belum aktif',
         cameraMessageText: 'Izinkan akses untuk mulai memindai',
+        decoderStatus: 'Kamera belum aktif',
         facingMode: 'environment',
         flashOn: false,
+        torchSupported: false,
         stream: null,
         reader: null,
         controls: null,
@@ -219,15 +226,17 @@ document.addEventListener('alpine:init', () => {
             try {
                 this.stopStream();
 
-                this.stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: this.facingMode },
-                    audio: false,
-                });
+                this.stream = await navigator.mediaDevices.getUserMedia(createCameraConstraints(this.facingMode));
 
                 this.$refs.cameraVideo.srcObject = this.stream;
                 await this.$refs.cameraVideo.play();
+                await applySupportedCameraOptimizations(this.stream);
 
                 this.cameraActive = true;
+                this.torchSupported = this.canUseTorch();
+                this.decoderStatus = 'Menstabilkan kamera...';
+                await waitForCameraWarmUp();
+
                 await this.startDecoder();
                 this.$store.toasts.add('Kamera aktif dan siap memindai', 'success');
             } catch (error) {
@@ -249,22 +258,60 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        toggleFlash() {
-            this.flashOn = ! this.flashOn;
+        async toggleFlash() {
+            if (! this.torchSupported) {
+                return;
+            }
 
-            this.$store.toasts.add(
-                this.flashOn ? 'Lampu simulasi dinyalakan' : 'Lampu simulasi dimatikan',
-                'success',
-            );
+            const nextState = ! this.flashOn;
+
+            try {
+                await this.applyTorch(nextState);
+                this.flashOn = nextState;
+
+                this.$store.toasts.add(
+                    this.flashOn ? 'Lampu dinyalakan' : 'Lampu dimatikan',
+                    'success',
+                );
+            } catch (error) {
+                this.$store.toasts.add('Lampu tidak tersedia di perangkat ini', 'warning');
+            }
+        },
+
+        canUseTorch() {
+            const track = this.stream?.getVideoTracks?.()[0];
+
+            try {
+                return Boolean(track?.getCapabilities?.().torch);
+            } catch (error) {
+                return false;
+            }
+        },
+
+        async applyTorch(enabled) {
+            const track = this.stream?.getVideoTracks?.()[0];
+
+            if (! track?.applyConstraints) {
+                throw new Error('Torch is not supported.');
+            }
+
+            await track.applyConstraints({ advanced: [{ torch: enabled }] });
         },
 
         stopStream() {
+            if (this.flashOn) {
+                this.applyTorch(false).catch(() => {});
+            }
+
             if (this.stream) {
                 this.stream.getTracks().forEach((track) => track.stop());
                 this.stream = null;
             }
 
+            this.flashOn = false;
+            this.torchSupported = false;
             this.cameraActive = false;
+            this.decoderStatus = 'Kamera belum aktif';
             this.stopDecoder();
         },
 
@@ -282,6 +329,7 @@ document.addEventListener('alpine:init', () => {
 
             try {
                 this.reader = await createQrCodeReader();
+                this.decoderStatus = 'Mencari QR';
 
                 this.controls = await this.reader.decodeFromVideoElement(
                     this.$refs.cameraVideo,
@@ -293,6 +341,7 @@ document.addEventListener('alpine:init', () => {
 
                 this.cameraMessageTitle = 'Kamera tidak dapat memindai';
                 this.cameraMessageText = 'Gunakan Scanner Device atau input manual';
+                this.decoderStatus = 'Decoder berhenti';
             }
         },
 
@@ -304,6 +353,7 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            this.decoderStatus = 'QR ditemukan';
             this.submitCode(code);
         },
 
@@ -311,6 +361,17 @@ document.addEventListener('alpine:init', () => {
             this.controls?.stop();
             this.controls = null;
             this.reader = null;
+        },
+
+        async retryDecoder() {
+            this.stopDecoder();
+
+            if (! this.cameraActive) {
+                return;
+            }
+
+            this.decoderStatus = 'Mencari QR';
+            await this.startDecoder();
         },
 
         submitDeviceInput() {

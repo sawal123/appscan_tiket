@@ -15,7 +15,7 @@
         </div>
 
         <div class="camera-controls">
-            <button class="camera-control" type="button" id="flashButton" aria-label="Nyalakan lampu" data-testid="flashlight-button" x-bind:class="{ 'is-active': flashOn }" x-on:click="toggleFlash()"><i data-lucide="flashlight"></i></button>
+            <button class="camera-control" type="button" id="flashButton" aria-label="Nyalakan lampu" data-testid="flashlight-button" x-show="torchSupported" x-bind:class="{ 'is-active': flashOn }" x-on:click="toggleFlash()"><i data-lucide="flashlight"></i></button>
             <button class="camera-control" type="button" id="switchCameraButton" aria-label="Ganti kamera" data-testid="switch-camera-button" x-on:click="switchCamera()"><i data-lucide="switch-camera"></i></button>
         </div>
 
@@ -28,6 +28,6 @@
 
     <div class="scan-instruction" data-testid="camera-instruction">
         <strong>Arahkan kamera ke QR tiket</strong>
-        <span>QR akan terbaca otomatis</span>
+        <span x-text="decoderStatus">QR akan terbaca otomatis</span>
     </div>
 </section>
