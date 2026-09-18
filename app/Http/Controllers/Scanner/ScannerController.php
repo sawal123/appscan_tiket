@@ -34,7 +34,7 @@ class ScannerController extends Controller
             ->orderByDesc('checked_in_at')
             ->get()
             ->map(fn (Ticket $ticket): array => [
-                'code' => $ticket->code,
+                'code' => $ticket->qr_code,
                 'category' => $ticket->ticketCategory?->name,
                 'time' => $ticket->checked_in_at?->format('H:i'),
                 'gate' => $this->activeEvent()?->location,

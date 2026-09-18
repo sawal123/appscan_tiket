@@ -18,8 +18,20 @@
             'testId' => 'nav-event-link',
             'icon' => 'event',
         ],
-        ['label' => 'Registrasi QR', 'href' => '#registrasi', 'testId' => 'nav-qr-registration-link', 'icon' => 'registration'],
-        ['label' => 'Tiket', 'href' => '#tiket', 'testId' => 'nav-tickets-link', 'icon' => 'tickets'],
+        [
+            'label' => 'Registrasi QR',
+            'href' => route('admin.tickets'),
+            'active' => request()->routeIs('admin.tickets'),
+            'testId' => 'nav-qr-registration-link',
+            'icon' => 'registration',
+        ],
+        [
+            'label' => 'Tiket',
+            'href' => route('admin.tickets'),
+            'active' => request()->routeIs('admin.tickets'),
+            'testId' => 'nav-tickets-link',
+            'icon' => 'tickets',
+        ],
         [
             'label' => 'Kategori Tiket',
             'href' => route('admin.ticket-categories'),

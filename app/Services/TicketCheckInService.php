@@ -27,7 +27,9 @@ class TicketCheckInService
             $ticket = Ticket::query()
                 ->forActiveEvent()
                 ->with(['ticketCategory.event'])
-                ->where('code', $normalized)
+                ->where(function ($query) use ($normalized): void {
+                    $query->where('qr_code', $normalized)->orWhere('code', $normalized);
+                })
                 ->lockForUpdate()
                 ->first();
 
@@ -40,6 +42,7 @@ class TicketCheckInService
             }
 
             $ticket->forceFill([
+                'status' => Ticket::STATUS_CHECKED_IN,
                 'checked_in_at' => now(),
                 'checked_in_by' => $user?->id,
             ])->save();
