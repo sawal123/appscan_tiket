@@ -3,6 +3,7 @@
 use App\Enums\EventStatus;
 use App\Livewire\Admin\CheckInReport;
 use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Scanners;
 use App\Models\CheckInLog;
 use App\Models\Event;
 use App\Models\Ticket;
@@ -227,6 +228,36 @@ test('data monitoring hanya berasal dari event aktif', function () {
 
     expect($scanners)->toHaveCount(1)
         ->and($scanners[0]['scans'])->toBe(1);
+});
+
+test('scanner status count hanya menghitung check-in event aktif', function () {
+    $previousEvent = Event::factory()->create(['name' => 'Event Sebelumnya', 'status' => EventStatus::Completed]);
+    $activeEvent = monitorEvent('Event Aktif');
+
+    $previousCategory = monitorCategory($previousEvent, 'Regular');
+    $activeCategory = monitorCategory($activeEvent, 'Regular');
+
+    $scanner = User::factory()->scanner()->create(['name' => 'Scanner Andi']);
+
+    $previousTicket = monitorTicket($previousCategory, checkedIn: true, code: 'STATUS-A-1');
+    $activeTicket = monitorTicket($activeCategory, checkedIn: true, code: 'STATUS-B-1');
+
+    monitorLog($previousTicket, $scanner, CheckInLog::STATUS_SUCCESS, scannedAt: now()->subMinutes(5));
+    monitorLog($activeTicket, $scanner, CheckInLog::STATUS_SUCCESS);
+    monitorLog($activeTicket, $scanner, CheckInLog::STATUS_ALREADY_CHECKED_IN);
+
+    expect(CheckInLog::where('scanner_id', $scanner->id)->count())->toBe(3);
+
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanners = Livewire::test(Dashboard::class)->instance()->scannerUsers();
+
+    expect($scanners)->toHaveCount(1)
+        ->and($scanners[0]['name'])->toBe('Scanner Andi')
+        ->and($scanners[0]['scans'])->toBe(2);
+
+    // The User Scanner management page intentionally keeps counting all events.
+    Livewire::test(Scanners::class)->assertSee('3 scan');
 });
 
 test('filter hari ini bekerja', function () {

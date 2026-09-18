@@ -166,23 +166,49 @@ class Dashboard extends Component
     }
 
     /**
-     * Users with the scanner role and their scan totals.
+     * Scan totals per scanner for the active event, keyed by scanner id.
+     *
+     * @return array<int, int>
+     */
+    private function scanTotalsByScanner(): array
+    {
+        $totals = CheckInLog::query()
+            ->whereNotNull('scanner_id')
+            ->whereHas('ticket', fn (Builder $query) => $query->forActiveEvent())
+            ->groupBy('scanner_id')
+            ->selectRaw('scanner_id, COUNT(*) as aggregate')
+            ->get()
+            ->pluck('aggregate', 'scanner_id')
+            ->all();
+
+        $normalized = [];
+
+        foreach ($totals as $scannerId => $count) {
+            $normalized[(int) $scannerId] = (int) $count;
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Scanner accounts with their scan totals for the active event.
      *
      * @return array<int, array<string, string|int>>
      */
     #[Computed]
     public function scannerUsers(): array
     {
+        $totals = $this->scanTotalsByScanner();
+
         return User::query()
             ->where('role', UserRole::Scanner->value)
-            ->withCount('checkInLogs')
             ->orderBy('name')
             ->get()
             ->map(fn (User $user): array => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'scans' => (int) $user->check_in_logs_count,
+                'scans' => $totals[$user->id] ?? 0,
             ])
             ->all();
     }
@@ -195,14 +221,7 @@ class Dashboard extends Component
     #[Computed]
     public function scannerActivity(): array
     {
-        $totals = CheckInLog::query()
-            ->whereNotNull('scanner_id')
-            ->whereHas('ticket', fn (Builder $query) => $query->forActiveEvent())
-            ->groupBy('scanner_id')
-            ->selectRaw('scanner_id, COUNT(*) as aggregate')
-            ->get()
-            ->pluck('aggregate', 'scanner_id')
-            ->all();
+        $totals = $this->scanTotalsByScanner();
 
         if ($totals === []) {
             return [];
@@ -214,9 +233,9 @@ class Dashboard extends Component
 
         foreach ($totals as $scannerId => $count) {
             $activity[] = [
-                'id' => (int) $scannerId,
-                'name' => (string) $names->get((int) $scannerId, 'Scanner'),
-                'scans' => (int) $count,
+                'id' => $scannerId,
+                'name' => (string) $names->get($scannerId, 'Scanner'),
+                'scans' => $count,
             ];
         }
 
