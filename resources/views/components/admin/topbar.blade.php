@@ -34,13 +34,13 @@
                 <svg aria-hidden="true" class="size-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
             </button>
 
-            <div data-testid="header-admin-profile" class="flex items-center gap-3">
+            <a href="{{ route('profile') }}" data-testid="header-admin-profile" class="flex items-center gap-3 rounded-lg transition hover:opacity-90" aria-label="Buka profil">
                 <span class="hidden text-right sm:block">
-                    <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Admin</span>
+                    <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">{{ ucfirst($user?->role?->value ?? 'admin') }}</span>
                     <span class="block text-sm font-bold">{{ $adminName }}</span>
                 </span>
                 <span class="grid size-11 place-items-center rounded-full bg-blue-100 text-sm font-extrabold text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">{{ $initials }}</span>
-            </div>
+            </a>
         </div>
     </div>
 </header>
