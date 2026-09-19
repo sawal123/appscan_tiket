@@ -3,6 +3,7 @@
 use App\Enums\EventStatus;
 use App\Models\CheckInLog;
 use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -30,6 +31,15 @@ function perfTicket(TicketCategory $category, string $code): Ticket
         'event_id' => $category->event_id,
         'code' => $code,
         'qr_code' => $code,
+    ]);
+}
+
+function perfAssignScanner(User $scanner, Event $event): void
+{
+    ScannerEventAssignment::create([
+        'user_id' => $scanner->id,
+        'event_id' => $event->id,
+        'assigned_at' => now(),
     ]);
 }
 
@@ -84,6 +94,9 @@ test('dua check-in pada satu QR menghasilkan satu success dan satu already check
     $firstScanner = User::factory()->scanner()->create(['name' => 'Scanner A']);
     $secondScanner = User::factory()->scanner()->create(['name' => 'Scanner B']);
 
+    perfAssignScanner($firstScanner, $event);
+    perfAssignScanner($secondScanner, $event);
+
     $this->actingAs($firstScanner);
     $this->postJson(route('scanner.check-in'), ['code' => 'RACE-0001'])
         ->assertOk()
@@ -113,25 +126,30 @@ test('dua check-in pada satu QR menghasilkan satu success dan satu already check
 });
 
 test('ticket dari event lain tidak bisa digunakan', function () {
-    perfEvent();
+    $event = perfEvent();
 
     $otherEvent = perfEvent('Event Lain', EventStatus::Draft);
     $otherCategory = perfCategory($otherEvent, 'Regular');
     perfTicket($otherCategory, 'OTHER-0001');
 
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
+    perfAssignScanner($scanner, $event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'OTHER-0001'])
         ->assertOk()
-        ->assertJsonPath('status', TicketValidationService::NOT_FOUND);
+        ->assertJsonPath('status', TicketValidationService::INVALID)
+        ->assertJsonPath('message', 'Tiket bukan untuk event scanner ini.');
 
     expect(CheckInLog::where('status', CheckInLog::STATUS_SUCCESS)->count())->toBe(0);
 });
 
 test('invalid QR tidak membuat check in log success', function () {
-    perfEvent();
+    $event = perfEvent();
 
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
+    perfAssignScanner($scanner, $event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'TIDAK-ADA-999'])
         ->assertOk()
@@ -147,6 +165,7 @@ test('scan tidak melakukan query berulang', function () {
     perfTicket($category, 'BUDGET-0001');
 
     $scanner = User::factory()->scanner()->create();
+    perfAssignScanner($scanner, $event);
 
     DB::flushQueryLog();
     DB::enableQueryLog();
