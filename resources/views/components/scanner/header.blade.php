@@ -23,13 +23,13 @@
                 <span data-theme-icon="dark"><i data-lucide="sun"></i></span>
             </button>
 
-            <span class="scanner-identity" data-testid="scanner-identity" aria-label="Operator {{ $scannerName }} · {{ $scannerRole }}">
+            <a href="{{ route('profile') }}" class="scanner-identity" data-testid="scanner-identity" aria-label="Buka profil operator {{ $scannerName }} · {{ $scannerRole }}">
                 <span class="avatar-button" data-testid="profile-button" aria-hidden="true">{{ $scannerInitials }}</span>
                 <span class="scanner-identity__meta">
                     <strong data-testid="scanner-name" title="{{ $scannerName }}">{{ $scannerName }}</strong>
                     <small data-testid="scanner-role">{{ $scannerRole }}</small>
                 </span>
-            </span>
+            </a>
 
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

@@ -160,11 +160,13 @@
 
     <div class="border-t border-slate-100 p-3 dark:border-slate-800">
         <div data-testid="sidebar-admin-profile" class="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/70">
-            <span class="grid size-10 shrink-0 place-items-center rounded-full bg-slate-900 text-sm font-bold text-white dark:bg-blue-600">{{ $initials }}</span>
-            <span class="min-w-0 flex-1">
-                <span class="block truncate text-sm font-bold">{{ $adminName }}</span>
-                <span class="block text-xs text-slate-500 dark:text-slate-400">Admin Event</span>
-            </span>
+            <a href="{{ route('profile') }}" data-testid="sidebar-profile-link" class="flex min-w-0 flex-1 items-center gap-3" aria-label="Buka profil">
+                <span class="grid size-10 shrink-0 place-items-center rounded-full bg-slate-900 text-sm font-bold text-white dark:bg-blue-600">{{ $initials }}</span>
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-bold">{{ $adminName }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">Admin Event</span>
+                </span>
+            </a>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button data-testid="logout-button" type="submit" class="grid size-9 place-items-center rounded-lg text-slate-400 hover:bg-white hover:text-red-600 dark:hover:bg-slate-700" aria-label="Keluar">

@@ -4,6 +4,7 @@
 - For bug fixes expects an explicit regression test that reproduces the reported scenario (e.g. Event A has check-ins, Event B is active, and Event B's dashboard/report must not show Event A's log), usually proving the excluded data is still present in the database so the test fails only because of the scoping. Confidence: 0.7
 - Validation workflow order: run migration, then targeted/new tests, then regression tests, then the full `php artisan test` suite. Confidence: 0.9
 - Runs Pint on changed PHP files as part of finishing. Confidence: 0.85
+- Expects static analysis included in the finish checks: the run list is `php artisan test`, a types/static-analysis script (`composer types:check`, backed by PHPStan), and `vendor/bin/pint`. Confidence: 0.7
 - Runs `npm run build` only when frontend assets actually changed. Confidence: 0.85
 - Stays strictly within the stated task scope; do not audit or refactor unrelated areas, and don't touch already-PASSING auth/role architecture or finished Dashboard design. Confidence: 0.9
 - Dislikes redundant file reads — do not read the same file more than twice; reuse existing context. Confidence: 0.7

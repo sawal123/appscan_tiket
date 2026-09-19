@@ -13,6 +13,7 @@ use App\Livewire\Admin\Settings as AdminSettings;
 use App\Livewire\Admin\TicketCategories as AdminTicketCategories;
 use App\Livewire\Admin\TicketCreate as AdminTicketCreate;
 use App\Livewire\Admin\Tickets as AdminTickets;
+use App\Livewire\Profile\EditProfile;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -29,6 +30,10 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', 'admin/dashboard')->name('dashboard');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::livewire('profile', EditProfile::class)->name('profile');
 });
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
