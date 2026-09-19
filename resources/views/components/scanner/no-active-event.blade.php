@@ -1,3 +1,9 @@
+@props([
+    'title' => 'Tidak ada event aktif',
+    'description' => 'Hubungi admin untuk mengaktifkan event sebelum melakukan scan tiket.',
+    'label' => 'Status Event',
+])
+
 <section class="scan-method" aria-labelledby="scan-method-title">
     <div class="section-heading">
         <div>
@@ -10,9 +16,9 @@
         <section class="device-mode" data-testid="no-active-event" role="alert">
             <div class="device-ready">
                 <div class="device-ready__icon device-ready__icon--warning"><i data-lucide="triangle-alert"></i></div>
-                <p class="eyebrow">Status Event</p>
-                <h2 data-testid="no-active-event-title">Tidak ada event aktif</h2>
-                <p data-testid="no-active-event-description">Hubungi admin untuk mengaktifkan event sebelum melakukan scan tiket.</p>
+                <p class="eyebrow">{{ $label }}</p>
+                <h2 data-testid="no-active-event-title">{{ $title }}</h2>
+                <p data-testid="no-active-event-description">{{ $description }}</p>
             </div>
         </section>
     </div>

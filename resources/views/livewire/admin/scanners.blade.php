@@ -31,6 +31,7 @@
                         <tr>
                             <th class="px-6 py-3">Nama</th>
                             <th class="px-4 py-3">Email</th>
+                            <th class="px-4 py-3">Event Scanner</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3">Jumlah Scan</th>
                             <th class="px-4 py-3">Dibuat</th>
@@ -42,6 +43,7 @@
                             <tr data-testid="scanner-row-{{ $scanner->id }}" class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
                                 <td class="px-6 py-3.5 font-extrabold text-slate-950 dark:text-white">{{ $scanner->name }}</td>
                                 <td class="px-4 py-3.5 text-slate-600 dark:text-slate-300">{{ $scanner->email }}</td>
+                                <td class="px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300" data-testid="scanner-event-{{ $scanner->id }}">{{ $scanner->scannerEventAssignment?->event?->name ?? '-' }}</td>
                                 <td class="px-4 py-3.5">
                                     <x-admin.ui.badge :variant="$statusVariants[$scanner->is_active]" dot data-testid="scanner-status-{{ $scanner->id }}">{{ $scanner->is_active ? 'Aktif' : 'Nonaktif' }}</x-admin.ui.badge>
                                 </td>
@@ -62,12 +64,16 @@
                                             <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                             <span class="sr-only">Edit</span>
                                         </x-admin.ui.button>
+                                        <x-admin.ui.button variant="outline" size="icon" wire:click="assignEvent({{ $scanner->id }})" target="assignEvent({{ $scanner->id }})" data-testid="scanner-assign-event-{{ $scanner->id }}" aria-label="Atur event scanner" title="Atur Event">
+                                            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/><path d="m9 16 2 2 4-4"/></svg>
+                                            <span class="sr-only">Atur Event</span>
+                                        </x-admin.ui.button>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada akun scanner.</td>
+                                <td colspan="7" class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada akun scanner.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -85,6 +91,10 @@
                             <x-admin.ui.badge :variant="$statusVariants[$scanner->is_active]" size="sm" class="shrink-0">{{ $scanner->is_active ? 'Aktif' : 'Nonaktif' }}</x-admin.ui.badge>
                         </div>
                         <dl class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="col-span-2">
+                                <dt class="font-bold text-slate-400">Event Scanner</dt>
+                                <dd class="mt-1 font-semibold text-slate-700 dark:text-slate-300">{{ $scanner->scannerEventAssignment?->event?->name ?? '-' }}</dd>
+                            </div>
                             <div>
                                 <dt class="font-bold text-slate-400">Jumlah Scan</dt>
                                 <dd class="mt-1 font-semibold text-slate-700 dark:text-slate-300">{{ $scanner->check_in_logs_count }} scan</dd>
@@ -107,6 +117,10 @@
                             <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $scanner->id }})" target="edit({{ $scanner->id }})" aria-label="Edit scanner" title="Edit">
                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                 <span class="sr-only">Edit</span>
+                            </x-admin.ui.button>
+                            <x-admin.ui.button variant="outline" size="icon" wire:click="assignEvent({{ $scanner->id }})" target="assignEvent({{ $scanner->id }})" aria-label="Atur event scanner" title="Atur Event">
+                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/><path d="m9 16 2 2 4-4"/></svg>
+                                <span class="sr-only">Atur Event</span>
                             </x-admin.ui.button>
                         </div>
                     </article>
@@ -171,6 +185,42 @@
             <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <x-admin.ui.button variant="outline" wire:click="closeModal">Batal</x-admin.ui.button>
                 <x-admin.ui.button type="submit" target="save" data-testid="scanner-submit-button">Simpan</x-admin.ui.button>
+            </div>
+        </form>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="scanner-event-modal"
+        title="Atur Event Scanner"
+        subtitle="Tetapkan satu event aktif untuk scanner ini."
+        show="showEventModal"
+        close-action="closeEventModal"
+        title-test-id="scanner-event-modal-title"
+    >
+        <form wire:submit="saveEventAssignment" class="mt-5 space-y-4">
+            <x-admin.form.input
+                label="Scanner"
+                id="scanner-assignment-name"
+                wire:model="assigningScannerName"
+                readonly
+                data-testid="scanner-assignment-name-input"
+            />
+
+            <x-admin.form.select
+                label="Event"
+                id="scanner-assignment-event"
+                wire:model="assignmentEventId"
+                data-testid="scanner-assignment-event-input"
+            >
+                <option value="">Pilih Event</option>
+                @foreach ($events as $eventOption)
+                    <option value="{{ $eventOption->id }}">{{ $eventOption->name }}</option>
+                @endforeach
+            </x-admin.form.select>
+
+            <div class="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <x-admin.ui.button variant="outline" wire:click="closeEventModal">Batal</x-admin.ui.button>
+                <x-admin.ui.button type="submit" target="saveEventAssignment" data-testid="scanner-assignment-submit-button">Simpan Event</x-admin.ui.button>
             </div>
         </form>
     </x-admin.ui.modal>

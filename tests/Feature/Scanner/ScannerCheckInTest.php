@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -17,6 +18,15 @@ function activeTicket(array $attributes = []): Ticket
     $category = TicketCategory::factory()->for($event)->create();
 
     return Ticket::factory()->for($category, 'ticketCategory')->create($attributes);
+}
+
+function assignCheckInScanner(User $scanner, Event $event): void
+{
+    ScannerEventAssignment::create([
+        'user_id' => $scanner->id,
+        'event_id' => $event->id,
+        'assigned_at' => now(),
+    ]);
 }
 
 test('guests are redirected to login from the scanner pages', function () {
@@ -50,9 +60,11 @@ test('login page renders the sliced scanner design', function () {
 });
 
 test('validation returns valid for an unused ticket on the active event', function () {
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
 
     $ticket = activeTicket(['code' => 'VIP-001']);
+    assignCheckInScanner($scanner, $ticket->event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.validate'), ['code' => 'vip-001'])
         ->assertOk()
@@ -64,9 +76,11 @@ test('validation returns valid for an unused ticket on the active event', functi
 });
 
 test('validation returns used for a ticket that was already checked in', function () {
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
 
-    activeTicket(['code' => 'VIP-002', 'checked_in_at' => now(), 'checked_in_by' => User::factory()]);
+    $ticket = activeTicket(['code' => 'VIP-002', 'checked_in_at' => now(), 'checked_in_by' => User::factory()]);
+    assignCheckInScanner($scanner, $ticket->event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.validate'), ['code' => 'VIP-002'])
         ->assertOk()
@@ -74,32 +88,37 @@ test('validation returns used for a ticket that was already checked in', functio
 });
 
 test('validation returns not found for an unknown code', function () {
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
 
-    activeTicket(['code' => 'VIP-003']);
+    $ticket = activeTicket(['code' => 'VIP-003']);
+    assignCheckInScanner($scanner, $ticket->event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.validate'), ['code' => 'NOPE-999'])
         ->assertOk()
         ->assertJson(['status' => TicketValidationService::NOT_FOUND]);
 });
 
-test('validation ignores tickets from a non active event', function () {
-    $this->actingAs(User::factory()->scanner()->create());
-
+test('validation rejects tickets outside scanner assigned event', function () {
+    $scanner = User::factory()->scanner()->create();
+    $activeTicket = activeTicket(['code' => 'ACTIVE-001']);
     $event = Event::factory()->completed()->create();
     $category = TicketCategory::factory()->for($event)->create();
     Ticket::factory()->for($category, 'ticketCategory')->create(['code' => 'OLD-001']);
+    assignCheckInScanner($scanner, $activeTicket->event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.validate'), ['code' => 'OLD-001'])
         ->assertOk()
-        ->assertJson(['status' => TicketValidationService::NOT_FOUND]);
+        ->assertJson(['status' => TicketValidationService::INVALID]);
 });
 
 test('check in stores the check in time and the operator', function () {
     $scanner = User::factory()->scanner()->create();
-    $this->actingAs($scanner);
 
     $ticket = activeTicket(['code' => 'REG-001']);
+    assignCheckInScanner($scanner, $ticket->event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'REG-001'])
         ->assertOk()
@@ -115,9 +134,11 @@ test('check in stores the check in time and the operator', function () {
 });
 
 test('checking the same ticket in twice does not duplicate the check in', function () {
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
 
     $ticket = activeTicket(['code' => 'VIP-004']);
+    assignCheckInScanner($scanner, $ticket->event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'VIP-004'])
         ->assertOk()
@@ -133,7 +154,10 @@ test('checking the same ticket in twice does not duplicate the check in', functi
 });
 
 test('check in returns not found for an unknown code', function () {
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
+    $ticket = activeTicket(['code' => 'KNOWN-001']);
+    assignCheckInScanner($scanner, $ticket->event);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'MISSING'])
         ->assertOk()
@@ -158,13 +182,15 @@ test('guests cannot validate or check in', function () {
 });
 
 test('verified page lists tickets that were checked in on the active event', function () {
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
 
-    activeTicket([
+    $ticket = activeTicket([
         'code' => 'VIP-777',
         'checked_in_at' => now(),
         'checked_in_by' => User::factory(),
     ]);
+    assignCheckInScanner($scanner, $ticket->event);
+    $this->actingAs($scanner);
 
     $this->get(route('scanner.verified'))
         ->assertOk()

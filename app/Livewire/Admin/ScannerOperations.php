@@ -80,7 +80,7 @@ class ScannerOperations extends Component
     }
 
     /**
-     * @return array<int, array{id: int, scanner: string, device: string, status: string, statusVariant: string, lastSeen: string, lastScan: string, scans: int}>
+     * @return array<int, array{id: int, scanner: string, event: string, device: string, status: string, statusVariant: string, lastSeen: string, lastScan: string, scans: int}>
      */
     #[Computed]
     public function scannerRows(): array
@@ -89,7 +89,7 @@ class ScannerOperations extends Component
         $lastScans = $this->lastScansByScanner();
 
         return ScannerSession::query()
-            ->with('user:id,name,email')
+            ->with('user.scannerEventAssignment.event:id,name')
             ->orderByDesc('last_seen_at')
             ->get()
             ->map(function (ScannerSession $session) use ($lastScans, $scanCounts): array {
@@ -98,10 +98,12 @@ class ScannerOperations extends Component
                 $online = $session->last_seen_at->greaterThanOrEqualTo(now()->subMinutes(ScannerSession::ONLINE_THRESHOLD_MINUTES));
                 $idle = $online && ($lastScan === null || $lastScan->lessThan(now()->subMinutes(self::IDLE_THRESHOLD_MINUTES)));
                 $status = $online ? ($idle ? 'Idle' : 'Online') : 'Offline';
+                $assignment = $session->user->scannerEventAssignment;
 
                 return [
                     'id' => $session->id,
                     'scanner' => $session->user->name,
+                    'event' => $assignment ? $assignment->event->name : '-',
                     'device' => $session->device_name ?? '-',
                     'status' => $status,
                     'statusVariant' => match ($status) {

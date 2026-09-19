@@ -33,6 +33,7 @@
                     <thead class="bg-slate-50 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
                         <tr>
                             <th class="px-6 py-3">Scanner</th>
+                            <th class="px-4 py-3">Event Assigned</th>
                             <th class="px-4 py-3">Device</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3">Last Seen</th>
@@ -44,6 +45,7 @@
                         @forelse ($scannerRows as $row)
                             <tr data-testid="operations-scanner-row-{{ $row['id'] }}" class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
                                 <td class="px-6 py-3.5 font-extrabold text-slate-950 dark:text-white">{{ $row['scanner'] }}</td>
+                                <td class="px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">{{ $row['event'] }}</td>
                                 <td class="px-4 py-3.5 text-slate-600 dark:text-slate-300">{{ $row['device'] }}</td>
                                 <td class="px-4 py-3.5"><x-admin.ui.badge :variant="$row['statusVariant']" dot data-testid="operations-scanner-status-{{ $row['id'] }}">{{ $row['status'] }}</x-admin.ui.badge></td>
                                 <td class="px-4 py-3.5 tabular-nums text-slate-600 dark:text-slate-300">{{ $row['lastSeen'] }}</td>
@@ -66,6 +68,7 @@
                             <div class="min-w-0">
                                 <p class="font-extrabold text-slate-950 dark:text-white">{{ $row['scanner'] }}</p>
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $row['device'] }}</p>
+                                <p class="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Event: {{ $row['event'] }}</p>
                             </div>
                             <x-admin.ui.badge :variant="$row['statusVariant']" size="sm">{{ $row['status'] }}</x-admin.ui.badge>
                         </div>

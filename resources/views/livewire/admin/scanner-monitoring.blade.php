@@ -17,6 +17,7 @@
                     <thead class="bg-slate-50 text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
                         <tr>
                             <th class="px-6 py-3">Scanner</th>
+                            <th class="px-4 py-3">Event Assigned</th>
                             <th class="px-4 py-3">Device</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3">Last Seen</th>
@@ -32,6 +33,7 @@
                                     <p class="font-extrabold text-slate-950 dark:text-white">{{ $session->user?->name ?? 'Scanner' }}</p>
                                     <p class="mt-0.5 text-xs text-slate-400">{{ $session->user?->email ?? '-' }}</p>
                                 </td>
+                                <td class="px-4 py-3.5 font-semibold text-slate-700 dark:text-slate-300">{{ $session->user?->scannerEventAssignment?->event?->name ?? '-' }}</td>
                                 <td class="px-4 py-3.5">
                                     <p class="font-semibold text-slate-700 dark:text-slate-300">{{ $session->device_name ?? '-' }}</p>
                                     <p class="mt-0.5 max-w-[220px] truncate text-xs text-slate-400">{{ $session->device_id ?? '-' }}</p>
@@ -45,7 +47,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada scanner yang mengirim heartbeat.</td>
+                                <td colspan="7" class="px-6 py-10 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada scanner yang mengirim heartbeat.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -60,6 +62,7 @@
                             <div class="min-w-0">
                                 <p class="font-extrabold text-slate-950 dark:text-white">{{ $session->user?->name ?? 'Scanner' }}</p>
                                 <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ $session->device_name ?? '-' }}</p>
+                                <p class="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Event: {{ $session->user?->scannerEventAssignment?->event?->name ?? '-' }}</p>
                             </div>
                             <x-admin.ui.badge :variant="$online ? 'emerald' : 'slate'" size="sm">{{ $online ? 'Online' : 'Offline' }}</x-admin.ui.badge>
                         </div>

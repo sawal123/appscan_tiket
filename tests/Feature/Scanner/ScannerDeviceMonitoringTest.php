@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\ScannerSession;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
@@ -138,6 +139,11 @@ test('offline calculation benar', function () {
 test('success check-in update last scan at', function () {
     $scanner = User::factory()->scanner()->create();
     $ticket = monitoringTicket('MON-777');
+    ScannerEventAssignment::create([
+        'user_id' => $scanner->id,
+        'event_id' => $ticket->event_id,
+        'assigned_at' => now(),
+    ]);
 
     $this->actingAs($scanner)
         ->postJson(route('scanner.heartbeat'), [

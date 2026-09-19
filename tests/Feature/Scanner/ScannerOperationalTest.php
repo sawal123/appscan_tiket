@@ -1,11 +1,21 @@
 <?php
 
 use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
+
+function assignOperationalScanner(User $scanner, Event $event): void
+{
+    ScannerEventAssignment::create([
+        'user_id' => $scanner->id,
+        'event_id' => $event->id,
+        'assigned_at' => now(),
+    ]);
+}
 
 test('scanner aktif dapat mengakses halaman scanner', function () {
     $this->actingAs(User::factory()->scanner()->create())
@@ -39,31 +49,35 @@ test('tombol logout tersedia di header scanner', function () {
 });
 
 test('event aktif tampil di header scanner', function () {
-    Event::factory()->active()->create(['name' => 'Festival ABC 2026']);
+    $event = Event::factory()->active()->create(['name' => 'Festival ABC 2026']);
+    $scanner = User::factory()->scanner()->create();
+    assignOperationalScanner($scanner, $event);
 
-    $this->actingAs(User::factory()->scanner()->create())
+    $this->actingAs($scanner)
         ->get(route('scanner.index'))
         ->assertOk()
         ->assertSee('Festival ABC 2026');
 });
 
-test('tanpa event aktif tampil warning dan pemindaian dinonaktifkan', function () {
+test('scanner tanpa event assignment tampil warning dan pemindaian dinonaktifkan', function () {
     $this->actingAs(User::factory()->scanner()->create())
         ->get(route('scanner.index'))
         ->assertOk()
         ->assertSee('no-active-event', false)
-        ->assertSee('Tidak ada event aktif')
-        ->assertSee('Belum ada event aktif')
+        ->assertSee('Scanner belum memiliki event')
+        ->assertSee('Belum ada event assigned')
         ->assertDontSee('camera-mode-panel', false)
         ->assertDontSee('activate-camera-button', false)
         ->assertDontSee('hardware-scanner-input', false)
         ->assertDontSee('manual-input-open-button', false);
 });
 
-test('scan tetap tersedia saat ada event aktif', function () {
-    Event::factory()->active()->create();
+test('scan tetap tersedia saat scanner memiliki event assignment', function () {
+    $event = Event::factory()->active()->create();
+    $scanner = User::factory()->scanner()->create();
+    assignOperationalScanner($scanner, $event);
 
-    $this->actingAs(User::factory()->scanner()->create())
+    $this->actingAs($scanner)
         ->get(route('scanner.index'))
         ->assertOk()
         ->assertSee('camera-mode-panel', false)

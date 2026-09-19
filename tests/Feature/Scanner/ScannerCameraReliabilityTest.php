@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -74,7 +75,9 @@ test('flow scan validate check-in success tetap berjalan', function () {
         'qr_code' => 'REL-001',
     ]);
 
-    $this->actingAs(User::factory()->scanner()->create());
+    $scanner = User::factory()->scanner()->create();
+    ScannerEventAssignment::create(['user_id' => $scanner->id, 'event_id' => $event->id, 'assigned_at' => now()]);
+    $this->actingAs($scanner);
 
     $this->postJson(route('scanner.validate'), ['code' => 'rel-001'])
         ->assertOk()

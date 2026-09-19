@@ -25,8 +25,20 @@ class TicketCheckInService
         $normalized = $this->validation->normalize($code);
 
         return DB::transaction(function () use ($normalized, $user): array {
+            $eventId = $this->eventIdFor($user);
+
+            if ($user?->isScanner() && $eventId === null) {
+                $this->logAttempt(null, $user, $normalized, CheckInLog::STATUS_INVALID);
+
+                return $this->validation->payload(
+                    TicketValidationService::INVALID,
+                    $normalized,
+                    message: 'Scanner belum memiliki event. Hubungi administrator.',
+                );
+            }
+
             $ticket = Ticket::query()
-                ->forActiveEvent()
+                ->when($eventId !== null, fn ($query) => $query->where('event_id', $eventId), fn ($query) => $query->forActiveEvent())
                 ->with(['ticketCategory.event', 'checkedInBy'])
                 ->where(function ($query) use ($normalized): void {
                     $query->where('qr_code', $normalized)->orWhere('code', $normalized);
@@ -36,6 +48,14 @@ class TicketCheckInService
 
             if (! $ticket) {
                 $this->logAttempt(null, $user, $normalized, CheckInLog::STATUS_INVALID);
+
+                if ($this->ticketExistsOutsideEvent($normalized, $eventId)) {
+                    return $this->validation->payload(
+                        TicketValidationService::INVALID,
+                        $normalized,
+                        message: 'Tiket bukan untuk event scanner ini.',
+                    );
+                }
 
                 return $this->validation->payload(TicketValidationService::NOT_FOUND, $normalized);
             }
@@ -67,5 +87,34 @@ class TicketCheckInService
             'status' => $status,
             'scanned_at' => now(),
         ]);
+    }
+
+    private function eventIdFor(?User $user): ?int
+    {
+        if (! $user?->isScanner()) {
+            return null;
+        }
+
+        $assignment = $user->scannerEventAssignment;
+
+        if (! $assignment) {
+            $assignment = $user->scannerEventAssignment()->first();
+        }
+
+        return $assignment?->event_id;
+    }
+
+    private function ticketExistsOutsideEvent(string $code, ?int $eventId): bool
+    {
+        if ($eventId === null) {
+            return false;
+        }
+
+        return Ticket::query()
+            ->where('event_id', '<>', $eventId)
+            ->where(function ($query) use ($code): void {
+                $query->where('qr_code', $code)->orWhere('code', $code);
+            })
+            ->exists();
     }
 }
