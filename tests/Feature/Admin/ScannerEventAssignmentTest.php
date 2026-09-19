@@ -161,3 +161,50 @@ test('scanner hanya dapat scan ticket pada event assignment', function () {
     expect(CheckInLog::query()->where('ticket_id', $ticketB->id)->where('status', CheckInLog::STATUS_SUCCESS)->exists())->toBeFalse()
         ->and($ticketB->fresh()->checked_in_at)->toBeNull();
 });
+
+test('scanner tidak dapat di-assign ke event completed', function () {
+    $admin = User::factory()->admin()->create();
+    $scanner = User::factory()->scanner()->create();
+    $completedEvent = Event::factory()->completed()->create(['name' => 'Event Sudah Selesai']);
+
+    Livewire::actingAs($admin)
+        ->test(Scanners::class)
+        ->call('assignEvent', $scanner->id)
+        ->set('assignmentEventId', $completedEvent->id)
+        ->call('saveEventAssignment')
+        ->assertHasErrors('assignmentEventId');
+
+    expect(ScannerEventAssignment::query()->where('user_id', $scanner->id)->exists())->toBeFalse();
+
+    $this->actingAs($admin)
+        ->get(route('admin.scanners'))
+        ->assertOk()
+        ->assertDontSee('Event Sudah Selesai');
+});
+
+test('scanner dapat di-assign ke event draft dan aktif', function () {
+    $admin = User::factory()->admin()->create();
+
+    $draftEvent = Event::factory()->create(['name' => 'Event Draft']);
+    $activeEvent = Event::factory()->active()->create(['name' => 'Event Aktif']);
+
+    $draftScanner = User::factory()->scanner()->create();
+    $activeScanner = User::factory()->scanner()->create();
+
+    Livewire::actingAs($admin)
+        ->test(Scanners::class)
+        ->call('assignEvent', $draftScanner->id)
+        ->set('assignmentEventId', $draftEvent->id)
+        ->call('saveEventAssignment')
+        ->assertHasNoErrors();
+
+    Livewire::actingAs($admin)
+        ->test(Scanners::class)
+        ->call('assignEvent', $activeScanner->id)
+        ->set('assignmentEventId', $activeEvent->id)
+        ->call('saveEventAssignment')
+        ->assertHasNoErrors();
+
+    expect(ScannerEventAssignment::query()->where('user_id', $draftScanner->id)->where('event_id', $draftEvent->id)->exists())->toBeTrue()
+        ->and(ScannerEventAssignment::query()->where('user_id', $activeScanner->id)->where('event_id', $activeEvent->id)->exists())->toBeTrue();
+});

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Enums\EventStatus;
 use App\Enums\UserRole;
 use App\Models\Event;
 use App\Models\ScannerEventAssignment;
@@ -176,7 +177,14 @@ class Scanners extends Component
                 'integer',
                 Rule::exists('users', 'id')->where('role', UserRole::Scanner->value),
             ],
-            'assignmentEventId' => ['required', 'integer', Rule::exists('events', 'id')],
+            'assignmentEventId' => [
+                'required',
+                'integer',
+                Rule::exists('events', 'id')->whereIn('status', [
+                    EventStatus::Draft->value,
+                    EventStatus::Active->value,
+                ]),
+            ],
         ]);
     }
 
@@ -203,6 +211,7 @@ class Scanners extends Component
                 ->get(),
             'events' => Event::query()
                 ->select(['id', 'name'])
+                ->whereIn('status', [EventStatus::Draft->value, EventStatus::Active->value])
                 ->orderBy('name')
                 ->get(),
         ])->layoutData([
