@@ -2,6 +2,8 @@
 
 use App\Enums\UserRole;
 use App\Livewire\Profile\EditProfile;
+use App\Models\Event;
+use App\Models\ScannerEventAssignment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -15,16 +17,31 @@ test('guest diarahkan ke login dari halaman profile', function () {
 });
 
 test('user terautentikasi dapat membuka halaman profile', function () {
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(User::factory()->admin()->create())
         ->get(route('profile'))
         ->assertOk()
-        ->assertSee('Profil Saya');
+        ->assertSee('data-testid="admin-sidebar"', false)
+        ->assertSee('data-testid="dashboard-title"', false)
+        ->assertSee('Profil Saya')
+        ->assertSee('data-testid="profile-information-section"', false);
 });
 
-test('scanner dapat membuka profile miliknya sendiri', function () {
+test('scanner profile menggunakan layout scanner tanpa navigasi admin', function () {
     $this->actingAs(User::factory()->scanner()->create())
         ->get(route('profile'))
-        ->assertOk();
+        ->assertOk()
+        ->assertSee('data-page="profile"', false)
+        ->assertSee('data-testid="app-header"', false)
+        ->assertSee('data-testid="profile-information-section"', false)
+        ->assertSee('data-testid="profile-password-section"', false)
+        ->assertDontSee('data-testid="admin-sidebar"', false)
+        ->assertDontSee('data-testid="nav-dashboard-link"', false)
+        ->assertDontSee('data-testid="nav-event-link"', false)
+        ->assertDontSee('data-testid="nav-scanner-users-link"', false)
+        ->assertDontSee('data-testid="nav-settings-link"', false)
+        ->assertDontSee('Dashboard')
+        ->assertDontSee('User Scanner')
+        ->assertDontSee('Pengaturan');
 });
 
 test('nama dapat diperbarui', function () {
@@ -117,8 +134,14 @@ test('konfirmasi password baru harus cocok', function () {
     expect(Hash::check('password', $user->fresh()->password))->toBeTrue();
 });
 
-test('update profile tidak mengubah role dan status aktif', function () {
+test('update profile tidak mengubah role status aktif dan assignment', function () {
     $user = User::factory()->scanner()->create();
+    $event = Event::factory()->active()->create();
+    $assignment = ScannerEventAssignment::create([
+        'user_id' => $user->id,
+        'event_id' => $event->id,
+        'assigned_at' => now(),
+    ]);
 
     Livewire::actingAs($user)
         ->test(EditProfile::class)
@@ -130,5 +153,7 @@ test('update profile tidak mengubah role dan status aktif', function () {
     $fresh = $user->fresh();
 
     expect($fresh->role)->toBe(UserRole::Scanner)
-        ->and($fresh->is_active)->toBeTrue();
+        ->and($fresh->is_active)->toBeTrue()
+        ->and($assignment->fresh()->user_id)->toBe($user->id)
+        ->and($assignment->fresh()->event_id)->toBe($event->id);
 });

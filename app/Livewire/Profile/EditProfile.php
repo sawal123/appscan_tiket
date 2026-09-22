@@ -6,11 +6,9 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Layout('layouts.admin')]
 #[Title('Profil Saya')]
 class EditProfile extends Component
 {
@@ -95,7 +93,18 @@ class EditProfile extends Component
 
     public function render(): View
     {
-        return view('livewire.profile.edit-profile')->layoutData([
+        $user = $this->user();
+        $isScanner = $user->isScanner();
+
+        return view('livewire.profile.edit-profile', [
+            'isScanner' => $isScanner,
+            'scannerName' => $user->name,
+            'scannerInitials' => $user->initials(),
+            'scannerRole' => ucfirst($user->role->value),
+        ])->layout($isScanner ? 'components.scanner.layout' : 'layouts.admin')->layoutData([
+            'title' => 'Profil Saya',
+            'description' => 'Kelola informasi akun scanner.',
+            'page' => 'profile',
             'topbarTitle' => 'Profil Saya',
             'topbarSubtitle' => 'Kelola informasi akun Anda',
         ]);
