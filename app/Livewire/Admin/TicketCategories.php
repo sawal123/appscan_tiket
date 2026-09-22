@@ -67,6 +67,19 @@ class TicketCategories extends Component
         $category->update(['is_active' => ! $category->is_active]);
     }
 
+    public function delete(int $categoryId): void
+    {
+        $category = TicketCategory::withCount('tickets')->findOrFail($categoryId);
+
+        if ($category->tickets_count > 0) {
+            $this->addError('delete', 'Kategori tidak dapat dihapus karena sudah memiliki tiket. Nonaktifkan kategori ini jika tidak ingin digunakan lagi.');
+
+            return;
+        }
+
+        $category->delete();
+    }
+
     public function closeModal(): void
     {
         $this->showModal = false;
@@ -109,6 +122,7 @@ class TicketCategories extends Component
             'events' => Event::query()->orderBy('name')->get(),
             'categories' => TicketCategory::query()
                 ->with('event')
+                ->withCount('tickets')
                 ->when($this->eventFilter, fn ($query) => $query->where('event_id', $this->eventFilter))
                 ->orderBy('name')
                 ->get(),

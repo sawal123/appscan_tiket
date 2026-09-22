@@ -19,6 +19,10 @@
             </x-admin.ui.button>
         </div>
 
+        @if ($errors->has('delete'))
+            <x-admin.ui.alert variant="danger" data-testid="ticket-category-delete-error">{{ $errors->first('delete') }}</x-admin.ui.alert>
+        @endif
+
         <x-admin.ui.card :overflow="true" aria-labelledby="ticket-category-list-title">
             <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-slate-800">
                 <div>
@@ -74,6 +78,17 @@
                                             <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                             <span class="sr-only">Edit</span>
                                         </x-admin.ui.button>
+                                        @if ($category->tickets_count === 0)
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $category->id }})" target="delete({{ $category->id }})" wire:confirm="Hapus kategori ini?" data-testid="delete-ticket-category-{{ $category->id }}" aria-label="Hapus kategori" title="Hapus">
+                                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                                <span class="sr-only">Hapus</span>
+                                            </x-admin.ui.button>
+                                        @else
+                                            <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki tiket. Nonaktifkan kategori ini jika tidak ingin digunakan lagi." data-testid="ticket-category-delete-blocked-{{ $category->id }}" aria-label="Tidak dapat dihapus">
+                                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                                <span class="sr-only">Tidak dapat dihapus</span>
+                                            </x-admin.ui.button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -110,6 +125,17 @@
                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                 <span class="sr-only">Edit</span>
                             </x-admin.ui.button>
+                            @if ($category->tickets_count === 0)
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $category->id }})" target="delete({{ $category->id }})" wire:confirm="Hapus kategori ini?" aria-label="Hapus kategori" title="Hapus">
+                                    <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                    <span class="sr-only">Hapus</span>
+                                </x-admin.ui.button>
+                            @else
+                                <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki tiket. Nonaktifkan kategori ini jika tidak ingin digunakan lagi." data-testid="ticket-category-delete-blocked-{{ $category->id }}" aria-label="Tidak dapat dihapus">
+                                    <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                    <span class="sr-only">Tidak dapat dihapus</span>
+                                </x-admin.ui.button>
+                            @endif
                         </div>
                     </article>
                 @empty

@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
@@ -213,4 +214,120 @@ test('scanner yang dinonaktifkan tidak dapat membuka halaman scanner', function 
     $this->actingAs($scanner->fresh())
         ->get(route('scanner.index'))
         ->assertForbidden();
+});
+
+test('scanner tanpa histori scan dapat dihapus', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+
+    Livewire::test(Scanners::class)
+        ->call('delete', $scanner->id)
+        ->assertHasNoErrors();
+
+    expect(User::find($scanner->id))->toBeNull();
+});
+
+test('scanner dengan histori check in log tidak dapat dihapus', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    scannerCheckInLog($scanner);
+
+    Livewire::test(Scanners::class)
+        ->call('delete', $scanner->id)
+        ->assertHasErrors('delete');
+
+    expect(User::find($scanner->id))->not->toBeNull();
+});
+
+test('attempt delete scanner dengan histori tidak menghapus user maupun check in logs', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    $log = scannerCheckInLog($scanner);
+
+    Livewire::test(Scanners::class)
+        ->call('delete', $scanner->id)
+        ->assertHasErrors('delete');
+
+    expect(User::find($scanner->id))->not->toBeNull()
+        ->and(CheckInLog::find($log->id))->not->toBeNull();
+});
+
+test('scanner dengan histori scan dapat dinonaktifkan', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    scannerCheckInLog($scanner);
+
+    Livewire::test(Scanners::class)
+        ->call('toggleActive', $scanner->id)
+        ->assertHasNoErrors();
+
+    expect($scanner->fresh()->is_active)->toBeFalse();
+});
+
+test('check in logs tetap ada setelah scanner dinonaktifkan', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    $log = scannerCheckInLog($scanner);
+
+    Livewire::test(Scanners::class)->call('toggleActive', $scanner->id);
+
+    expect(CheckInLog::find($log->id)->scanner_id)->toBe($scanner->id);
+});
+
+test('histori scan tetap menunjukkan scanner tersebut setelah dinonaktifkan', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    $log = scannerCheckInLog($scanner);
+
+    Livewire::test(Scanners::class)->call('toggleActive', $scanner->id);
+
+    expect($log->fresh()->scanner->id)->toBe($scanner->id);
+});
+
+test('halaman scanner menyembunyikan delete dan menampilkan indikator untuk scanner dengan histori', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    scannerCheckInLog($scanner);
+
+    $this->get(route('admin.scanners'))
+        ->assertOk()
+        ->assertSee('scanner-delete-blocked-'.$scanner->id, false)
+        ->assertDontSee('data-testid="delete-scanner-'.$scanner->id.'"', false);
+});
+
+test('manual delete request untuk scanner dengan histori tidak melewati business rule', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $used = scannerUser();
+    scannerCheckInLog($used);
+    $unused = scannerUser();
+
+    Livewire::test(Scanners::class)
+        ->call('delete', $used->id)
+        ->assertHasErrors('delete');
+
+    Livewire::test(Scanners::class)
+        ->call('delete', $unused->id)
+        ->assertHasNoErrors();
+
+    expect(User::find($used->id))->not->toBeNull()
+        ->and(User::find($unused->id))->toBeNull();
+});
+
+test('delete scanner menolak id yang bukan role scanner', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $admin = User::factory()->admin()->create();
+
+    expect(fn () => Livewire::test(Scanners::class)->call('delete', $admin->id))
+        ->toThrow(ModelNotFoundException::class);
+
+    expect(User::find($admin->id))->not->toBeNull();
 });

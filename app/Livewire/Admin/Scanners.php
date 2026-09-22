@@ -82,6 +82,19 @@ class Scanners extends Component
         $scanner->update(['is_active' => ! $scanner->is_active]);
     }
 
+    public function delete(int $scannerId): void
+    {
+        $scanner = $this->findScanner($scannerId)->loadCount('checkInLogs');
+
+        if ($scanner->check_in_logs_count > 0) {
+            $this->addError('delete', 'Scanner tidak dapat dihapus karena sudah memiliki histori scan. Nonaktifkan scanner ini jika tidak ingin digunakan lagi.');
+
+            return;
+        }
+
+        $scanner->delete();
+    }
+
     public function assignEvent(int $scannerId): void
     {
         $scanner = $this->findScanner($scannerId)->load('scannerEventAssignment');
