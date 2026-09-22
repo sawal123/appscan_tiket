@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Admin\ScannerCreate;
 use App\Livewire\Admin\Scanners;
 use App\Models\CheckInLog;
 use App\Models\Event;
@@ -11,6 +12,7 @@ use App\Services\TicketCheckInService;
 use App\Services\TicketValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use RuntimeException;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -35,6 +37,124 @@ function assignScannerToEvent(User $scanner, Event $event, ?User $admin = null):
         'assigned_at' => now(),
     ]);
 }
+
+test('tambah scanner wajib memilih event', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    Livewire::test(ScannerCreate::class)
+        ->set('name', 'Scanner Gate 01')
+        ->set('email', 'scanner.required@gateflow.test')
+        ->set('password', 'rahasia123')
+        ->set('password_confirmation', 'rahasia123')
+        ->call('save')
+        ->assertHasErrors(['event_id' => 'required']);
+
+    expect(User::query()->where('email', 'scanner.required@gateflow.test')->exists())->toBeFalse();
+});
+
+test('scanner baru otomatis memiliki assignment event', function () {
+    $admin = User::factory()->admin()->create();
+    $event = Event::factory()->active()->create(['name' => 'Festival Musik 2026']);
+
+    $this->actingAs($admin);
+
+    Livewire::test(ScannerCreate::class)
+        ->set('name', 'Scanner Gate 01')
+        ->set('email', 'scanner.auto@gateflow.test')
+        ->set('password', 'rahasia123')
+        ->set('password_confirmation', 'rahasia123')
+        ->set('event_id', $event->id)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('admin.scanners'));
+
+    $scanner = User::query()->where('email', 'scanner.auto@gateflow.test')->sole();
+
+    expect(ScannerEventAssignment::query()
+        ->where('user_id', $scanner->id)
+        ->where('event_id', $event->id)
+        ->where('assigned_by', $admin->id)
+        ->exists())->toBeTrue();
+});
+
+test('tambah scanner dengan event draft berhasil', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $draftEvent = Event::factory()->create();
+
+    Livewire::test(ScannerCreate::class)
+        ->set('name', 'Scanner Draft')
+        ->set('email', 'scanner.draft@gateflow.test')
+        ->set('password', 'rahasia123')
+        ->set('password_confirmation', 'rahasia123')
+        ->set('event_id', $draftEvent->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $scanner = User::query()->where('email', 'scanner.draft@gateflow.test')->sole();
+
+    expect(ScannerEventAssignment::query()->where('user_id', $scanner->id)->where('event_id', $draftEvent->id)->exists())->toBeTrue();
+});
+
+test('tambah scanner dengan event active berhasil', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $activeEvent = Event::factory()->active()->create();
+
+    Livewire::test(ScannerCreate::class)
+        ->set('name', 'Scanner Active')
+        ->set('email', 'scanner.active@gateflow.test')
+        ->set('password', 'rahasia123')
+        ->set('password_confirmation', 'rahasia123')
+        ->set('event_id', $activeEvent->id)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $scanner = User::query()->where('email', 'scanner.active@gateflow.test')->sole();
+
+    expect(ScannerEventAssignment::query()->where('user_id', $scanner->id)->where('event_id', $activeEvent->id)->exists())->toBeTrue();
+});
+
+test('event completed tidak tersedia dan tidak dapat dipilih saat tambah scanner', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $draftEvent = Event::factory()->create(['name' => 'Event Draft']);
+    $completedEvent = Event::factory()->completed()->create(['name' => 'Event Selesai']);
+
+    Livewire::test(ScannerCreate::class)
+        ->assertSee('Event Draft')
+        ->assertDontSee('Event Selesai')
+        ->set('name', 'Scanner Completed')
+        ->set('email', 'scanner.completed@gateflow.test')
+        ->set('password', 'rahasia123')
+        ->set('password_confirmation', 'rahasia123')
+        ->set('event_id', $completedEvent->id)
+        ->call('save')
+        ->assertHasErrors('event_id');
+
+    expect(User::query()->where('email', 'scanner.completed@gateflow.test')->exists())->toBeFalse()
+        ->and(ScannerEventAssignment::query()->where('event_id', $draftEvent->id)->exists())->toBeFalse();
+});
+
+test('jika assignment gagal user tidak tersimpan', function () {
+    $this->actingAs(User::factory()->admin()->create());
+    $event = Event::factory()->active()->create();
+
+    ScannerEventAssignment::creating(function (): void {
+        throw new RuntimeException('Assignment gagal.');
+    });
+
+    try {
+        expect(fn () => Livewire::test(ScannerCreate::class)
+            ->set('name', 'Scanner Rollback')
+            ->set('email', 'scanner.rollback@gateflow.test')
+            ->set('password', 'rahasia123')
+            ->set('password_confirmation', 'rahasia123')
+            ->set('event_id', $event->id)
+            ->call('save'))->toThrow(RuntimeException::class);
+    } finally {
+        ScannerEventAssignment::flushEventListeners();
+    }
+
+    expect(User::query()->where('email', 'scanner.rollback@gateflow.test')->exists())->toBeFalse();
+});
 
 test('admin dapat assign scanner ke event', function () {
     $admin = User::factory()->admin()->create();
@@ -134,6 +254,35 @@ test('scanner dengan assignment dapat scan', function () {
         ->assertSee('hardware-scanner-input', false);
 
     $this->postJson(route('scanner.check-in'), ['code' => 'ASSIGN-001'])
+        ->assertOk()
+        ->assertJsonPath('status', TicketCheckInService::SUCCESS);
+});
+
+test('scanner dengan event draft tidak dapat melakukan check-in', function () {
+    $scanner = User::factory()->scanner()->create(['name' => 'Scanner Draft']);
+    $event = Event::factory()->create(['name' => 'Event Draft']);
+    assignScannerToEvent($scanner, $event);
+    assignmentTicket($event, 'DRAFT-001');
+
+    $this->actingAs($scanner)
+        ->get(route('scanner.index'))
+        ->assertOk()
+        ->assertDontSee('camera-mode-panel', false)
+        ->assertDontSee('hardware-scanner-input', false);
+
+    $this->postJson(route('scanner.check-in'), ['code' => 'DRAFT-001'])
+        ->assertOk()
+        ->assertJsonPath('status', TicketValidationService::INVALID);
+});
+
+test('scanner dengan event active dapat melakukan check-in', function () {
+    $scanner = User::factory()->scanner()->create(['name' => 'Scanner Active']);
+    $event = Event::factory()->active()->create(['name' => 'Event Active']);
+    assignScannerToEvent($scanner, $event);
+    assignmentTicket($event, 'ACTIVE-001');
+
+    $this->actingAs($scanner)
+        ->postJson(route('scanner.check-in'), ['code' => 'ACTIVE-001'])
         ->assertOk()
         ->assertJsonPath('status', TicketCheckInService::SUCCESS);
 });

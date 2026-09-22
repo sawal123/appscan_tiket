@@ -69,12 +69,14 @@ test('admin dapat melihat daftar scanner', function () {
 
 test('admin dapat membuat scanner', function () {
     $this->actingAs(User::factory()->admin()->create());
+    $event = Event::factory()->active()->create();
 
     Livewire::test(ScannerCreate::class)
         ->set('name', 'Andi')
         ->set('email', 'andi.scan@gateflow.test')
         ->set('password', 'rahasia123')
         ->set('password_confirmation', 'rahasia123')
+        ->set('event_id', $event->id)
         ->call('save')
         ->assertHasNoErrors()
         ->assertRedirect(route('admin.scanners'));
@@ -86,12 +88,14 @@ test('admin dapat membuat scanner', function () {
 
 test('user baru otomatis memiliki role scanner', function () {
     $this->actingAs(User::factory()->admin()->create());
+    $event = Event::factory()->active()->create();
 
     Livewire::test(ScannerCreate::class)
         ->set('name', 'Petugas')
         ->set('email', 'petugas@gateflow.test')
         ->set('password', 'rahasia123')
         ->set('password_confirmation', 'rahasia123')
+        ->set('event_id', $event->id)
         ->call('save')
         ->assertHasNoErrors();
 
@@ -104,12 +108,14 @@ test('user baru otomatis memiliki role scanner', function () {
 
 test('password tersimpan hashed', function () {
     $this->actingAs(User::factory()->admin()->create());
+    $event = Event::factory()->active()->create();
 
     Livewire::test(ScannerCreate::class)
         ->set('name', 'Petugas')
         ->set('email', 'hashed@gateflow.test')
         ->set('password', 'rahasia123')
         ->set('password_confirmation', 'rahasia123')
+        ->set('event_id', $event->id)
         ->call('save')
         ->assertHasNoErrors();
 

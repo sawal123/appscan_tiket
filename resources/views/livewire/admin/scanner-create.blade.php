@@ -52,6 +52,18 @@
                     data-testid="scanner-password-confirmation-input"
                 />
 
+                <x-admin.form.select
+                    label="Event Scanner"
+                    id="scanner-create-event"
+                    wire:model="event_id"
+                    data-testid="scanner-event-input"
+                >
+                    <option value="">Pilih Event</option>
+                    @foreach ($events as $eventOption)
+                        <option value="{{ $eventOption->id }}">{{ $eventOption->name }} ({{ $eventOption->status->label() }})</option>
+                    @endforeach
+                </x-admin.form.select>
+
                 <div class="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end dark:border-slate-800">
                     <x-admin.ui.button variant="outline" :href="route('admin.scanners')" type="button">Batal</x-admin.ui.button>
                     <x-admin.ui.button type="submit" target="save" data-testid="scanner-save-button">
@@ -71,7 +83,7 @@
                 </li>
                 <li class="flex gap-2">
                     <svg aria-hidden="true" class="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
-                    Dapat membuka halaman scanner untuk check-in tiket.
+                    Dapat membuka halaman scanner sesuai event yang ditetapkan.
                 </li>
                 <li class="flex gap-2">
                     <svg aria-hidden="true" class="mt-0.5 size-4 shrink-0 text-red-500 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>

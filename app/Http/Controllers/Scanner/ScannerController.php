@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Scanner;
 
+use App\Enums\EventStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\ScannerSession;
@@ -22,7 +23,7 @@ class ScannerController extends Controller
     public function index(): View
     {
         $assignedEvent = $this->assignedEvent();
-        $activeEvent = auth()->user()?->isScanner() ? $assignedEvent : $this->activeEvent();
+        $activeEvent = auth()->user()?->isScanner() ? $this->activeAssignedEvent($assignedEvent) : $this->activeEvent();
 
         return view('scanner.index', [
             'activeEvent' => $activeEvent,
@@ -34,7 +35,7 @@ class ScannerController extends Controller
     public function verified(Request $request): View
     {
         $assignedEvent = $this->assignedEvent();
-        $activeEvent = $request->user()?->isScanner() ? $assignedEvent : $this->activeEvent();
+        $activeEvent = $request->user()?->isScanner() ? $this->activeAssignedEvent($assignedEvent) : $this->activeEvent();
         $search = trim((string) $request->query('search', ''));
         $categoryId = $request->integer('category') ?: null;
 
@@ -130,6 +131,11 @@ class ScannerController extends Controller
             ->with('event')
             ->first()
             ?->event;
+    }
+
+    private function activeAssignedEvent(?Event $event): ?Event
+    {
+        return $event?->status === EventStatus::Active ? $event : null;
     }
 
     /**
