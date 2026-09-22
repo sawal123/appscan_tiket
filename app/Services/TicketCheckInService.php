@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\EventStatus;
 use App\Models\CheckInLog;
 use App\Models\Ticket;
 use App\Models\User;
@@ -95,13 +96,24 @@ class TicketCheckInService
             return null;
         }
 
-        $assignment = $user->scannerEventAssignment;
-
-        if (! $assignment) {
-            $assignment = $user->scannerEventAssignment()->first();
+        if (! $user->relationLoaded('scannerEventAssignment')) {
+            return $user->scannerEventAssignment()
+                ->whereHas('event', fn ($query) => $query->where('status', EventStatus::Active->value))
+                ->value('event_id');
         }
 
-        return $assignment?->event_id;
+        $assignment = $user->scannerEventAssignment;
+        if (! $assignment) {
+            return null;
+        }
+
+        if (! $assignment->relationLoaded('event')) {
+            return $user->scannerEventAssignment()
+                ->whereHas('event', fn ($query) => $query->where('status', EventStatus::Active->value))
+                ->value('event_id');
+        }
+
+        return $assignment->event?->status === EventStatus::Active ? $assignment->event_id : null;
     }
 
     private function ticketExistsOutsideEvent(string $code, ?int $eventId): bool
