@@ -14,6 +14,7 @@ use App\Livewire\Admin\TicketCategories as AdminTicketCategories;
 use App\Livewire\Admin\TicketCreate as AdminTicketCreate;
 use App\Livewire\Admin\Tickets as AdminTickets;
 use App\Livewire\Profile\EditProfile;
+use App\Services\TicketImportService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -40,6 +41,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::livewire('admin/dashboard', AdminDashboard::class)->name('admin.dashboard');
     Route::livewire('admin/events', AdminEvents::class)->name('admin.events');
     Route::livewire('admin/tickets', AdminTickets::class)->name('admin.tickets');
+    Route::get('admin/tickets/import-template', function (TicketImportService $importService) {
+        return response($importService->templateXlsx(), 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="ticket-import-template.xlsx"',
+        ]);
+    })->name('admin.tickets.import-template');
     Route::livewire('admin/tickets/create', AdminTicketCreate::class)->name('admin.tickets.create');
     Route::livewire('admin/ticket-categories', AdminTicketCategories::class)->name('admin.ticket-categories');
     Route::livewire('admin/check-in-history', AdminCheckInHistory::class)->name('admin.check-in-history');

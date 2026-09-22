@@ -76,6 +76,273 @@ test('duplicate QR ditolak', function () {
     expect(Ticket::where('qr_code', 'ABC001')->count())->toBe(1);
 });
 
+test('admin dapat melihat tombol edit untuk tiket belum check-in', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'EDIT001');
+    $checkedInTicket = managedTicket($event, $category, 'EDIT002', ['checked_in_at' => now()]);
+
+    $this->get(route('admin.tickets'))
+        ->assertOk()
+        ->assertSee('data-testid="ticket-edit-'.$ticket->id.'"', false)
+        ->assertDontSee('data-testid="ticket-edit-'.$checkedInTicket->id.'"', false);
+});
+
+test('admin dapat mengubah QR tiket belum check-in', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'EDITQR001');
+
+    Livewire::test(Tickets::class)
+        ->call('edit', $ticket->id)
+        ->set('editingQrCode', 'editqr002')
+        ->call('saveEdit')
+        ->assertHasNoErrors();
+
+    expect($ticket->fresh())
+        ->qr_code->toBe('EDITQR002')
+        ->code->toBe('EDITQR002')
+        ->event_id->toBe($event->id)
+        ->registered_by->toBe($ticket->registered_by);
+});
+
+test('admin dapat mengubah kategori tiket belum check-in', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $firstCategory = TicketCategory::factory()->for($event)->create(['name' => 'Regular']);
+    $secondCategory = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $firstCategory, 'EDITCAT001');
+
+    Livewire::test(Tickets::class)
+        ->call('edit', $ticket->id)
+        ->set('editingCategoryId', $secondCategory->id)
+        ->call('saveEdit')
+        ->assertHasNoErrors();
+
+    expect($ticket->fresh())
+        ->ticket_category_id->toBe($secondCategory->id)
+        ->event_id->toBe($event->id);
+});
+
+test('edit QR duplicate ditolak', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'EDITDUP001');
+    managedTicket($event, $category, 'EDITDUP002');
+
+    Livewire::test(Tickets::class)
+        ->call('edit', $ticket->id)
+        ->set('editingQrCode', 'EDITDUP002')
+        ->call('saveEdit')
+        ->assertHasErrors(['editingQrCode']);
+
+    expect($ticket->fresh()->qr_code)->toBe('EDITDUP001');
+});
+
+test('edit kategori event lain ditolak', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $otherEvent = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $otherCategory = TicketCategory::factory()->for($otherEvent)->create(['name' => 'Regular']);
+    $ticket = managedTicket($event, $category, 'EDITOTHER001');
+
+    Livewire::test(Tickets::class)
+        ->call('edit', $ticket->id)
+        ->set('editingCategoryId', $otherCategory->id)
+        ->call('saveEdit')
+        ->assertHasErrors(['editingCategoryId']);
+
+    expect($ticket->fresh())
+        ->ticket_category_id->toBe($category->id)
+        ->event_id->toBe($event->id);
+});
+
+test('tiket checked-in tidak dapat diedit dan attempt tidak mengubah database', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'LOCKEDIT001', [
+        'checked_in_at' => now(),
+        'status' => Ticket::STATUS_CHECKED_IN,
+    ]);
+
+    Livewire::test(Tickets::class)
+        ->call('edit', $ticket->id)
+        ->set('editingTicketId', $ticket->id)
+        ->set('editingQrCode', 'LOCKEDIT002')
+        ->set('editingCategoryId', $category->id)
+        ->call('saveEdit')
+        ->assertHasNoErrors();
+
+    expect($ticket->fresh())
+        ->qr_code->toBe('LOCKEDIT001')
+        ->checked_in_at->not->toBeNull()
+        ->status->toBe(Ticket::STATUS_CHECKED_IN);
+});
+
+test('admin dapat menghapus tiket belum check-in', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'DELETE001');
+
+    Livewire::test(Tickets::class)
+        ->call('deleteTicket', $ticket->id)
+        ->assertHasNoErrors();
+
+    expect(Ticket::whereKey($ticket->id)->exists())->toBeFalse();
+});
+
+test('tiket checked-in tidak dapat dihapus dan attempt tidak menghapus database', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'LOCKDELETE001', ['checked_in_at' => now()]);
+
+    Livewire::test(Tickets::class)
+        ->call('deleteTicket', $ticket->id)
+        ->assertHasNoErrors();
+
+    expect(Ticket::whereKey($ticket->id)->exists())->toBeTrue();
+});
+
+test('admin dapat memilih beberapa tiket belum check-in dan bulk delete menghapus tiket yang dipilih', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $first = managedTicket($event, $category, 'BULKDEL001');
+    $second = managedTicket($event, $category, 'BULKDEL002');
+
+    Livewire::test(Tickets::class)
+        ->set('selectedTicketIds', [$first->id, $second->id])
+        ->assertSet('selectedTicketIds', [$first->id, $second->id])
+        ->call('bulkDelete')
+        ->assertSet('selectedTicketIds', [])
+        ->assertHasNoErrors();
+
+    expect(Ticket::whereIn('id', [$first->id, $second->id])->exists())->toBeFalse();
+});
+
+test('checked-in ticket tidak dapat ikut dipilih', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $checkedInTicket = managedTicket($event, $category, 'SELECTLOCK001', ['checked_in_at' => now()]);
+
+    Livewire::test(Tickets::class)
+        ->set('selectedTicketIds', [$checkedInTicket->id])
+        ->assertSet('selectedTicketIds', []);
+});
+
+test('manual selected ID checked-in tidak menyebabkan tiket tersebut terhapus', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $valid = managedTicket($event, $category, 'TAMPER001');
+    $checkedInTicket = managedTicket($event, $category, 'TAMPER002', ['checked_in_at' => now()]);
+
+    Livewire::test(Tickets::class)
+        ->set('selectedTicketIds', [$valid->id])
+        ->set('selectedTicketIds', [$valid->id, $checkedInTicket->id])
+        ->call('bulkDelete')
+        ->assertHasNoErrors();
+
+    expect(Ticket::whereKey($valid->id)->exists())->toBeFalse()
+        ->and(Ticket::whereKey($checkedInTicket->id)->exists())->toBeTrue();
+});
+
+test('bulk delete hanya menghapus tiket dengan checked_in_at null', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $valid = managedTicket($event, $category, 'BULKNULL001');
+    $checkedInTicket = managedTicket($event, $category, 'BULKNULL002', ['checked_in_at' => now()]);
+
+    Livewire::test(Tickets::class)
+        ->set('selectedTicketIds', [$valid->id, $checkedInTicket->id])
+        ->call('bulkDelete')
+        ->assertSet('selectedTicketIds', []);
+
+    expect(Ticket::whereKey($valid->id)->exists())->toBeFalse()
+        ->and(Ticket::whereKey($checkedInTicket->id)->exists())->toBeTrue();
+});
+
+test('selection tidak menyebabkan tiket dari filter sebelumnya ikut terhapus', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $eventA = Event::factory()->create(['name' => 'Event A']);
+    $eventB = Event::factory()->create(['name' => 'Event B']);
+    $categoryA = TicketCategory::factory()->for($eventA)->create(['name' => 'VIP']);
+    $categoryB = TicketCategory::factory()->for($eventB)->create(['name' => 'VIP']);
+    $ticketA = managedTicket($eventA, $categoryA, 'FILTER001');
+    $ticketB = managedTicket($eventB, $categoryB, 'FILTER002');
+
+    Livewire::test(Tickets::class)
+        ->set('eventFilter', $eventA->id)
+        ->set('selectedTicketIds', [$ticketA->id])
+        ->set('eventFilter', $eventB->id)
+        ->assertSet('selectedTicketIds', [])
+        ->set('selectAllDisplayed', true)
+        ->call('bulkDelete');
+
+    expect(Ticket::whereKey($ticketA->id)->exists())->toBeTrue()
+        ->and(Ticket::whereKey($ticketB->id)->exists())->toBeFalse();
+});
+
+test('select all hanya memilih tiket eligible', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $valid = managedTicket($event, $category, 'SELECTALL001');
+    $checkedInTicket = managedTicket($event, $category, 'SELECTALL002', ['checked_in_at' => now()]);
+
+    $component = Livewire::test(Tickets::class)
+        ->set('selectAllDisplayed', true);
+
+    expect($component->get('selectedTicketIds'))->toEqualCanonicalizing([$valid->id])
+        ->and($component->get('selectedTicketIds'))->not->toContain($checkedInTicket->id);
+});
+
+test('download template excel dapat diakses admin dan berisi header import', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $response = $this->get(route('admin.tickets.import-template'));
+
+    $response->assertOk()
+        ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    expect($response->headers->get('content-disposition'))->toContain('ticket-import-template.xlsx');
+
+    $headers = xlsxFirstRow((string) $response->getContent());
+
+    expect($headers)->toBe(['qr_code', 'ticket_category']);
+});
+
+test('guest dan scanner tidak dapat mengakses endpoint template admin', function () {
+    $this->get(route('admin.tickets.import-template'))->assertRedirect(route('login'));
+
+    $this->actingAs(User::factory()->scanner()->create())
+        ->get(route('admin.tickets.import-template'))
+        ->assertForbidden();
+});
+
 test('CSV valid berhasil import', function () {
     $admin = User::factory()->admin()->create();
     $this->actingAs($admin);
@@ -343,6 +610,44 @@ test('import ribuan QR tetap dalam query budget', function () {
 function csvUpload(string $content): UploadedFile
 {
     return UploadedFile::fake()->createWithContent('tickets.csv', $content);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function managedTicket(Event $event, TicketCategory $category, string $qrCode, array $attributes = []): Ticket
+{
+    return Ticket::factory()->for($category, 'ticketCategory')->create([
+        'event_id' => $event->id,
+        'ticket_category_id' => $category->id,
+        'code' => $qrCode,
+        'qr_code' => $qrCode,
+        ...$attributes,
+    ]);
+}
+
+/**
+ * @return array<int, string>
+ */
+function xlsxFirstRow(string $content): array
+{
+    $path = tempnam(sys_get_temp_dir(), 'template').'.xlsx';
+    file_put_contents($path, $content);
+
+    $zip = new ZipArchive;
+    $zip->open($path);
+    $sheetXml = (string) $zip->getFromName('xl/worksheets/sheet1.xml');
+    $zip->close();
+    @unlink($path);
+
+    $sheet = simplexml_load_string($sheetXml);
+    $values = [];
+
+    foreach ($sheet->sheetData->row[0]->c as $cell) {
+        $values[] = (string) $cell->is->t;
+    }
+
+    return $values;
 }
 
 /**
