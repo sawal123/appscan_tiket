@@ -48,6 +48,14 @@ class Event extends Model
     }
 
     /**
+     * @return HasMany<Ticket, $this>
+     */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    /**
      * @return HasMany<ScannerEventAssignment, $this>
      */
     public function scannerAssignments(): HasMany

@@ -89,7 +89,13 @@ class Events extends Component
 
     public function delete(int $eventId): void
     {
-        $event = Event::withCount('ticketCategories')->findOrFail($eventId);
+        $event = Event::withCount(['tickets', 'ticketCategories'])->findOrFail($eventId);
+
+        if ($event->tickets_count > 0) {
+            $this->addError('delete', 'Event tidak dapat dihapus karena sudah memiliki tiket. Nonaktifkan event ini jika tidak ingin digunakan lagi.');
+
+            return;
+        }
 
         if ($event->ticket_categories_count > 0) {
             $this->addError('delete', 'Event tidak dapat dihapus karena masih memiliki kategori tiket.');
@@ -143,7 +149,7 @@ class Events extends Component
     {
         return view('livewire.admin.events', [
             'events' => Event::query()
-                ->withCount('ticketCategories')
+                ->withCount(['ticketCategories', 'tickets'])
                 ->orderByDesc('event_date')
                 ->get(),
             'statuses' => EventStatus::cases(),

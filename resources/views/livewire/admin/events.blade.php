@@ -64,10 +64,17 @@
                                             <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                             <span class="sr-only">Edit</span>
                                         </x-admin.ui.button>
-                                        <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" data-testid="delete-event-{{ $event->id }}" aria-label="Hapus event" title="Hapus">
-                                            <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                                            <span class="sr-only">Hapus</span>
-                                        </x-admin.ui.button>
+                                        @if ($event->tickets_count === 0 && $event->ticket_categories_count === 0)
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" data-testid="delete-event-{{ $event->id }}" aria-label="Hapus event" title="Hapus">
+                                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                                <span class="sr-only">Hapus</span>
+                                            </x-admin.ui.button>
+                                        @else
+                                            <x-admin.ui.button variant="danger" size="icon" disabled title="{{ $event->tickets_count > 0 ? 'Tidak dapat dihapus karena sudah memiliki tiket.' : 'Tidak dapat dihapus karena masih memiliki kategori tiket.' }}" data-testid="event-delete-blocked-{{ $event->id }}" aria-label="Tidak dapat dihapus">
+                                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                                <span class="sr-only">Tidak dapat dihapus</span>
+                                            </x-admin.ui.button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -101,10 +108,17 @@
                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                 <span class="sr-only">Edit</span>
                             </x-admin.ui.button>
-                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" aria-label="Hapus event" title="Hapus">
-                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                                <span class="sr-only">Hapus</span>
-                            </x-admin.ui.button>
+                            @if ($event->tickets_count === 0 && $event->ticket_categories_count === 0)
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" aria-label="Hapus event" title="Hapus">
+                                    <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                    <span class="sr-only">Hapus</span>
+                                </x-admin.ui.button>
+                            @else
+                                <x-admin.ui.button variant="danger" size="icon" disabled title="{{ $event->tickets_count > 0 ? 'Tidak dapat dihapus karena sudah memiliki tiket.' : 'Tidak dapat dihapus karena masih memiliki kategori tiket.' }}" data-testid="event-delete-blocked-{{ $event->id }}" aria-label="Tidak dapat dihapus">
+                                    <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                    <span class="sr-only">Tidak dapat dihapus</span>
+                                </x-admin.ui.button>
+                            @endif
                         </div>
                     </article>
                 @empty

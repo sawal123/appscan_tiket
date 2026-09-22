@@ -3,6 +3,7 @@
 use App\Enums\EventStatus;
 use App\Livewire\Admin\Events;
 use App\Models\Event;
+use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -138,4 +139,100 @@ test('an event without relations can be deleted', function () {
         ->assertHasNoErrors();
 
     expect(Event::find($event->id))->toBeNull();
+});
+
+test('an event with tickets cannot be deleted', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $event->id]);
+
+    Livewire::test(Events::class)
+        ->call('delete', $event->id)
+        ->assertHasErrors('delete');
+
+    expect(Event::find($event->id))->not->toBeNull();
+});
+
+test('deleting an event with tickets does not remove the event or its tickets', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+    $ticket = Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $event->id]);
+
+    Livewire::test(Events::class)
+        ->call('delete', $event->id)
+        ->assertHasErrors('delete');
+
+    expect(Event::find($event->id))->not->toBeNull()
+        ->and(Ticket::find($ticket->id))->not->toBeNull();
+});
+
+test('an event with tickets can be deactivated using the existing status flow', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->active()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $event->id]);
+
+    Livewire::test(Events::class)
+        ->call('edit', $event->id)
+        ->set('status', EventStatus::Completed->value)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($event->fresh()->status)->toBe(EventStatus::Completed);
+});
+
+test('tickets and categories remain after the event is deactivated', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->active()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+    $ticket = Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $event->id]);
+
+    Livewire::test(Events::class)
+        ->call('edit', $event->id)
+        ->set('status', EventStatus::Completed->value)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($event->fresh()->status)->toBe(EventStatus::Completed)
+        ->and(Ticket::find($ticket->id))->not->toBeNull()
+        ->and(TicketCategory::find($category->id))->not->toBeNull();
+});
+
+test('the events page hides delete for used events and shows a blocked indicator', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $event->id]);
+
+    $this->get(route('admin.events'))
+        ->assertOk()
+        ->assertSee('event-delete-blocked-'.$event->id, false)
+        ->assertDontSee('data-testid="delete-event-'.$event->id.'"', false);
+});
+
+test('a manual delete request for a used event id does not bypass the business rule', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $used = Event::factory()->create();
+    $category = TicketCategory::factory()->for($used)->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $used->id]);
+    $unused = Event::factory()->create();
+
+    Livewire::test(Events::class)
+        ->call('delete', $used->id)
+        ->assertHasErrors('delete');
+
+    Livewire::test(Events::class)
+        ->call('delete', $unused->id)
+        ->assertHasNoErrors();
+
+    expect(Event::find($used->id))->not->toBeNull()
+        ->and(Event::find($unused->id))->toBeNull();
 });

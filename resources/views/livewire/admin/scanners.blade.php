@@ -19,6 +19,10 @@
             </x-admin.ui.button>
         </div>
 
+        @if ($errors->has('delete'))
+            <x-admin.ui.alert variant="danger" data-testid="scanner-delete-error">{{ $errors->first('delete') }}</x-admin.ui.alert>
+        @endif
+
         <x-admin.ui.card :overflow="true" aria-labelledby="scanner-list-title">
             <div class="border-b border-slate-100 px-5 py-4 sm:px-6 dark:border-slate-800">
                 <h2 id="scanner-list-title" class="text-lg font-extrabold">Semua Scanner</h2>
@@ -68,6 +72,17 @@
                                             <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/><path d="m9 16 2 2 4-4"/></svg>
                                             <span class="sr-only">Atur Event</span>
                                         </x-admin.ui.button>
+                                        @if ($scanner->check_in_logs_count === 0)
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $scanner->id }})" target="delete({{ $scanner->id }})" wire:confirm="Hapus scanner ini?" data-testid="delete-scanner-{{ $scanner->id }}" aria-label="Hapus scanner" title="Hapus">
+                                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                                <span class="sr-only">Hapus</span>
+                                            </x-admin.ui.button>
+                                        @else
+                                            <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki histori scan. Nonaktifkan scanner ini jika tidak ingin digunakan lagi." data-testid="scanner-delete-blocked-{{ $scanner->id }}" aria-label="Tidak dapat dihapus">
+                                                <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                                <span class="sr-only">Tidak dapat dihapus</span>
+                                            </x-admin.ui.button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -122,6 +137,17 @@
                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/><path d="m9 16 2 2 4-4"/></svg>
                                 <span class="sr-only">Atur Event</span>
                             </x-admin.ui.button>
+                            @if ($scanner->check_in_logs_count === 0)
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $scanner->id }})" target="delete({{ $scanner->id }})" wire:confirm="Hapus scanner ini?" aria-label="Hapus scanner" title="Hapus">
+                                    <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                    <span class="sr-only">Hapus</span>
+                                </x-admin.ui.button>
+                            @else
+                                <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki histori scan. Nonaktifkan scanner ini jika tidak ingin digunakan lagi." data-testid="scanner-delete-blocked-{{ $scanner->id }}" aria-label="Tidak dapat dihapus">
+                                    <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                                    <span class="sr-only">Tidak dapat dihapus</span>
+                                </x-admin.ui.button>
+                            @endif
                         </div>
                     </article>
                 @empty

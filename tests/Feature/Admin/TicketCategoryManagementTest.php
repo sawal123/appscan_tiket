@@ -2,6 +2,7 @@
 
 use App\Livewire\Admin\TicketCategories;
 use App\Models\Event;
+use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -128,4 +129,99 @@ test('admin can filter ticket categories by event', function () {
         ->set('eventFilter', $first->id)
         ->assertSee('Regular')
         ->assertDontSee('VVIP');
+});
+
+test('a ticket category without tickets can be deleted', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $category = TicketCategory::factory()->create();
+
+    Livewire::test(TicketCategories::class)
+        ->call('delete', $category->id)
+        ->assertHasNoErrors();
+
+    expect(TicketCategory::find($category->id))->toBeNull();
+});
+
+test('a ticket category with tickets cannot be deleted', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $category = TicketCategory::factory()->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create();
+
+    Livewire::test(TicketCategories::class)
+        ->call('delete', $category->id)
+        ->assertHasErrors('delete');
+
+    expect(TicketCategory::find($category->id))->not->toBeNull();
+});
+
+test('deleting a ticket category with tickets does not remove it or its tickets', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $category = TicketCategory::factory()->create();
+    $ticket = Ticket::factory()->for($category, 'ticketCategory')->create();
+
+    Livewire::test(TicketCategories::class)
+        ->call('delete', $category->id)
+        ->assertHasErrors('delete');
+
+    expect(TicketCategory::find($category->id))->not->toBeNull()
+        ->and(Ticket::find($ticket->id))->not->toBeNull();
+});
+
+test('a ticket category with tickets can be deactivated', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $category = TicketCategory::factory()->create(['is_active' => true]);
+    Ticket::factory()->for($category, 'ticketCategory')->create();
+
+    Livewire::test(TicketCategories::class)
+        ->call('toggleActive', $category->id)
+        ->assertHasNoErrors();
+
+    expect($category->fresh()->is_active)->toBeFalse();
+});
+
+test('existing tickets keep their category after deactivation', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $category = TicketCategory::factory()->create(['is_active' => true]);
+    $ticket = Ticket::factory()->for($category, 'ticketCategory')->create();
+
+    Livewire::test(TicketCategories::class)->call('toggleActive', $category->id);
+
+    expect($ticket->fresh()->ticket_category_id)->toBe($category->id)
+        ->and($ticket->fresh()->ticketCategory->is_active)->toBeFalse();
+});
+
+test('the ticket categories page hides delete for used categories', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $category = TicketCategory::factory()->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create();
+
+    $this->get(route('admin.ticket-categories'))
+        ->assertOk()
+        ->assertSee('ticket-category-delete-blocked-'.$category->id, false)
+        ->assertDontSee('data-testid="delete-ticket-category-'.$category->id.'"', false);
+});
+
+test('a manual delete request for a used category id does not bypass the business rule', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $used = TicketCategory::factory()->create();
+    Ticket::factory()->for($used, 'ticketCategory')->create();
+    $unused = TicketCategory::factory()->create();
+
+    Livewire::test(TicketCategories::class)
+        ->call('delete', $used->id)
+        ->assertHasErrors('delete');
+
+    Livewire::test(TicketCategories::class)
+        ->call('delete', $unused->id)
+        ->assertHasNoErrors();
+
+    expect(TicketCategory::find($used->id))->not->toBeNull()
+        ->and(TicketCategory::find($unused->id))->toBeNull();
 });

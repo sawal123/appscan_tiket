@@ -65,5 +65,5 @@ test('gagal saat ADMIN_EMAIL tidak diisi', function () {
     config()->set('admin.email', null);
     config()->set('admin.password', 'password');
 
-    expect(fn() => (new ProductionSeeder)->run())->toThrow(RuntimeException::class);
+    expect(fn () => (new ProductionSeeder)->run())->toThrow(RuntimeException::class);
 });
