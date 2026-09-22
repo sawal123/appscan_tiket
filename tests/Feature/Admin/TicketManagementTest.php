@@ -236,6 +236,138 @@ test('admin dapat memilih beberapa tiket belum check-in dan bulk delete menghapu
     expect(Ticket::whereIn('id', [$first->id, $second->id])->exists())->toBeFalse();
 });
 
+test('tombol delete tiket membuka modal konfirmasi tanpa menghapus', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'MODAL001');
+
+    Livewire::test(Tickets::class)
+        ->call('confirmDeleteTicket', $ticket->id)
+        ->assertSet('showDeleteModal', true)
+        ->assertSet('deletingTicketId', $ticket->id)
+        ->assertSet('deletingTicketLabel', 'MODAL001');
+
+    expect(Ticket::whereKey($ticket->id)->exists())->toBeTrue();
+});
+
+test('modal konfirmasi delete tiket menampilkan QR dan teks konfirmasi', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'MODAL002');
+
+    Livewire::test(Tickets::class)
+        ->call('confirmDeleteTicket', $ticket->id)
+        ->assertSet('showDeleteModal', true)
+        ->assertSee('Hapus Tiket?')
+        ->assertSee('MODAL002')
+        ->assertSee('Data yang sudah dihapus tidak dapat dikembalikan.');
+});
+
+test('batal pada modal delete tiket menutup modal dan tiket tetap ada', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'MODAL003');
+
+    Livewire::test(Tickets::class)
+        ->call('confirmDeleteTicket', $ticket->id)
+        ->call('cancelDeleteTicket')
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingTicketId', null)
+        ->assertSet('deletingTicketLabel', '');
+
+    expect(Ticket::whereKey($ticket->id)->exists())->toBeTrue();
+});
+
+test('konfirmasi modal delete tiket menjalankan delete dan menutup modal', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'MODAL004');
+
+    Livewire::test(Tickets::class)
+        ->call('confirmDeleteTicket', $ticket->id)
+        ->call('deleteTicket', $ticket->id)
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingTicketId', null)
+        ->assertHasNoErrors();
+
+    expect(Ticket::whereKey($ticket->id)->exists())->toBeFalse();
+});
+
+test('confirm delete tiket checked-in tidak membuka modal', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $ticket = managedTicket($event, $category, 'MODAL005', ['checked_in_at' => now()]);
+
+    Livewire::test(Tickets::class)
+        ->call('confirmDeleteTicket', $ticket->id)
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingTicketId', null);
+
+    expect(Ticket::whereKey($ticket->id)->exists())->toBeTrue();
+});
+
+test('tombol bulk delete membuka modal konfirmasi tanpa menghapus', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $first = managedTicket($event, $category, 'BULKMODAL001');
+    $second = managedTicket($event, $category, 'BULKMODAL002');
+
+    Livewire::test(Tickets::class)
+        ->set('selectedTicketIds', [$first->id, $second->id])
+        ->call('confirmBulkDelete')
+        ->assertSet('showBulkDeleteModal', true);
+
+    expect(Ticket::whereIn('id', [$first->id, $second->id])->exists())->toBeTrue();
+});
+
+test('batal pada modal bulk delete menutup modal dan tiket tetap ada', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $first = managedTicket($event, $category, 'BULKMODAL003');
+    $second = managedTicket($event, $category, 'BULKMODAL004');
+
+    Livewire::test(Tickets::class)
+        ->set('selectedTicketIds', [$first->id, $second->id])
+        ->call('confirmBulkDelete')
+        ->call('cancelBulkDelete')
+        ->assertSet('showBulkDeleteModal', false);
+
+    expect(Ticket::whereIn('id', [$first->id, $second->id])->exists())->toBeTrue();
+});
+
+test('konfirmasi modal bulk delete menjalankan bulk delete dan menutup modal', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create(['name' => 'VIP']);
+    $first = managedTicket($event, $category, 'BULKMODAL005');
+    $second = managedTicket($event, $category, 'BULKMODAL006');
+
+    Livewire::test(Tickets::class)
+        ->set('selectedTicketIds', [$first->id, $second->id])
+        ->call('confirmBulkDelete')
+        ->call('bulkDelete')
+        ->assertSet('showBulkDeleteModal', false)
+        ->assertSet('selectedTicketIds', [])
+        ->assertHasNoErrors();
+
+    expect(Ticket::whereIn('id', [$first->id, $second->id])->exists())->toBeFalse();
+});
+
 test('checked-in ticket tidak dapat ikut dipilih', function () {
     $this->actingAs(User::factory()->admin()->create());
 

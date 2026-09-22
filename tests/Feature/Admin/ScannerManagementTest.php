@@ -331,3 +331,88 @@ test('delete scanner menolak id yang bukan role scanner', function () {
 
     expect(User::find($admin->id))->not->toBeNull();
 });
+
+test('clicking delete opens the confirmation modal without deleting the scanner', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser(['name' => 'Andi']);
+
+    Livewire::test(Scanners::class)
+        ->call('confirmDelete', $scanner->id)
+        ->assertSet('showDeleteModal', true)
+        ->assertSet('deletingId', $scanner->id)
+        ->assertSet('deletingName', 'Andi');
+
+    expect(User::find($scanner->id))->not->toBeNull();
+});
+
+test('the delete confirmation modal shows the scanner name and confirmation copy', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser(['name' => 'Petugas Gate']);
+
+    Livewire::test(Scanners::class)
+        ->call('confirmDelete', $scanner->id)
+        ->assertSet('showDeleteModal', true)
+        ->assertSee('Hapus Scanner?')
+        ->assertSee('Petugas Gate')
+        ->assertSee('Data yang sudah dihapus tidak dapat dikembalikan.');
+});
+
+test('cancelling the delete confirmation closes the modal and keeps the scanner', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+
+    Livewire::test(Scanners::class)
+        ->call('confirmDelete', $scanner->id)
+        ->call('cancelDelete')
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingId', null);
+
+    expect(User::find($scanner->id))->not->toBeNull();
+});
+
+test('confirming the modal deletes the scanner and closes the modal', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+
+    Livewire::test(Scanners::class)
+        ->call('confirmDelete', $scanner->id)
+        ->call('delete', $scanner->id)
+        ->assertHasNoErrors()
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingId', null);
+
+    expect(User::find($scanner->id))->toBeNull();
+});
+
+test('a blocked scanner delete opens the history modal instead of the confirmation', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    scannerCheckInLog($scanner);
+
+    Livewire::test(Scanners::class)
+        ->call('showDeleteBlocked', $scanner->id)
+        ->assertSet('showDeleteBlockedModal', true)
+        ->assertSet('showDeleteModal', false)
+        ->assertSee('Scanner Tidak Dapat Dihapus')
+        ->assertSee('Scanner ini sudah memiliki histori scan.')
+        ->assertSee('Nonaktifkan Scanner');
+
+    expect(User::find($scanner->id))->not->toBeNull();
+});
+
+test('closing the blocked scanner modal resets it', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $scanner = scannerUser();
+    scannerCheckInLog($scanner);
+
+    Livewire::test(Scanners::class)
+        ->call('showDeleteBlocked', $scanner->id)
+        ->call('closeDeleteBlocked')
+        ->assertSet('showDeleteBlockedModal', false);
+});

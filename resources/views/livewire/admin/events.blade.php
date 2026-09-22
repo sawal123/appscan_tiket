@@ -65,12 +65,12 @@
                                             <span class="sr-only">Edit</span>
                                         </x-admin.ui.button>
                                         @if ($event->tickets_count === 0 && $event->ticket_categories_count === 0)
-                                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" data-testid="delete-event-{{ $event->id }}" aria-label="Hapus event" title="Hapus">
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="confirmDelete({{ $event->id }})" target="confirmDelete({{ $event->id }})" data-testid="delete-event-{{ $event->id }}" aria-label="Hapus event" title="Hapus">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                                 <span class="sr-only">Hapus</span>
                                             </x-admin.ui.button>
                                         @else
-                                            <x-admin.ui.button variant="danger" size="icon" disabled title="{{ $event->tickets_count > 0 ? 'Tidak dapat dihapus karena sudah memiliki tiket.' : 'Tidak dapat dihapus karena masih memiliki kategori tiket.' }}" data-testid="event-delete-blocked-{{ $event->id }}" aria-label="Tidak dapat dihapus">
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="showDeleteBlocked({{ $event->id }})" target="showDeleteBlocked({{ $event->id }})" data-testid="event-delete-blocked-{{ $event->id }}" aria-label="Tidak dapat dihapus" title="Tidak dapat dihapus">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                                 <span class="sr-only">Tidak dapat dihapus</span>
                                             </x-admin.ui.button>
@@ -109,12 +109,12 @@
                                 <span class="sr-only">Edit</span>
                             </x-admin.ui.button>
                             @if ($event->tickets_count === 0 && $event->ticket_categories_count === 0)
-                                <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $event->id }})" target="delete({{ $event->id }})" wire:confirm="Hapus event ini?" aria-label="Hapus event" title="Hapus">
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="confirmDelete({{ $event->id }})" target="confirmDelete({{ $event->id }})" aria-label="Hapus event" title="Hapus">
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                     <span class="sr-only">Hapus</span>
                                 </x-admin.ui.button>
                             @else
-                                <x-admin.ui.button variant="danger" size="icon" disabled title="{{ $event->tickets_count > 0 ? 'Tidak dapat dihapus karena sudah memiliki tiket.' : 'Tidak dapat dihapus karena masih memiliki kategori tiket.' }}" data-testid="event-delete-blocked-{{ $event->id }}" aria-label="Tidak dapat dihapus">
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="showDeleteBlocked({{ $event->id }})" target="showDeleteBlocked({{ $event->id }})" data-testid="event-delete-blocked-{{ $event->id }}" aria-label="Tidak dapat dihapus" title="Tidak dapat dihapus">
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                     <span class="sr-only">Tidak dapat dihapus</span>
                                 </x-admin.ui.button>
@@ -176,5 +176,41 @@
                 <x-admin.ui.button type="submit" target="save" data-testid="event-submit-button">Simpan</x-admin.ui.button>
             </div>
         </form>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="event-delete-modal"
+        title="Hapus Event?"
+        subtitle="Data yang sudah dihapus tidak dapat dikembalikan."
+        show="showDeleteModal"
+        close-action="cancelDelete"
+        title-test-id="event-delete-modal-title"
+    >
+        <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+            Apakah Anda yakin ingin menghapus event
+            <span class="font-bold text-slate-900 dark:text-white" data-testid="event-delete-name">&ldquo;{{ $deletingName }}&rdquo;</span>?
+            Data yang sudah dihapus tidak dapat dikembalikan.
+        </p>
+        <div class="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="cancelDelete" data-testid="event-delete-cancel">Batal</x-admin.ui.button>
+            <x-admin.ui.button variant="danger" wire:click="delete({{ $deletingId }})" target="delete({{ $deletingId }})" data-testid="event-delete-confirm">Hapus</x-admin.ui.button>
+        </div>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="event-delete-blocked-modal"
+        title="Event Tidak Dapat Dihapus"
+        show="showDeleteBlockedModal"
+        close-action="closeDeleteBlocked"
+        title-test-id="event-delete-blocked-modal-title"
+    >
+        <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+            <p data-testid="event-delete-blocked-reason">{{ $deleteBlockedReason }}</p>
+            <p>Untuk menjaga histori tiket dan check-in, data ini tidak dapat dihapus secara permanen.</p>
+            <p>Gunakan opsi "Nonaktifkan" jika event tidak ingin digunakan lagi.</p>
+        </div>
+        <div class="mt-5 flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="closeDeleteBlocked" data-testid="event-delete-blocked-close">Mengerti</x-admin.ui.button>
+        </div>
     </x-admin.ui.modal>
 </div>

@@ -27,6 +27,16 @@ class Events extends Component
 
     public string $status = EventStatus::Draft->value;
 
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingId = null;
+
+    public string $deletingName = '';
+
+    public bool $showDeleteBlockedModal = false;
+
+    public string $deleteBlockedReason = '';
+
     public function create(): void
     {
         $this->resetForm();
@@ -104,6 +114,52 @@ class Events extends Component
         }
 
         $event->delete();
+
+        $this->resetDeleteState();
+    }
+
+    public function confirmDelete(int $eventId): void
+    {
+        $event = Event::findOrFail($eventId);
+
+        $this->closeDeleteBlocked();
+
+        $this->deletingId = $event->id;
+        $this->deletingName = $event->name;
+
+        $this->resetValidation();
+        $this->showDeleteModal = true;
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->resetDeleteState();
+    }
+
+    public function showDeleteBlocked(int $eventId): void
+    {
+        $event = Event::withCount(['tickets', 'ticketCategories'])->findOrFail($eventId);
+
+        $this->resetDeleteState();
+
+        $this->deleteBlockedReason = $event->tickets_count > 0
+            ? 'Event ini tidak dapat dihapus karena sudah memiliki data tiket yang terhubung.'
+            : 'Event ini tidak dapat dihapus karena masih memiliki kategori tiket.';
+
+        $this->showDeleteBlockedModal = true;
+    }
+
+    public function closeDeleteBlocked(): void
+    {
+        $this->showDeleteBlockedModal = false;
+        $this->deleteBlockedReason = '';
+    }
+
+    private function resetDeleteState(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingId = null;
+        $this->deletingName = '';
     }
 
     public function closeModal(): void

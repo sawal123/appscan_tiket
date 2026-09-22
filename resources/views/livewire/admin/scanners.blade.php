@@ -73,12 +73,12 @@
                                             <span class="sr-only">Atur Event</span>
                                         </x-admin.ui.button>
                                         @if ($scanner->check_in_logs_count === 0)
-                                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $scanner->id }})" target="delete({{ $scanner->id }})" wire:confirm="Hapus scanner ini?" data-testid="delete-scanner-{{ $scanner->id }}" aria-label="Hapus scanner" title="Hapus">
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="confirmDelete({{ $scanner->id }})" target="confirmDelete({{ $scanner->id }})" data-testid="delete-scanner-{{ $scanner->id }}" aria-label="Hapus scanner" title="Hapus">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                                 <span class="sr-only">Hapus</span>
                                             </x-admin.ui.button>
                                         @else
-                                            <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki histori scan. Nonaktifkan scanner ini jika tidak ingin digunakan lagi." data-testid="scanner-delete-blocked-{{ $scanner->id }}" aria-label="Tidak dapat dihapus">
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="showDeleteBlocked({{ $scanner->id }})" target="showDeleteBlocked({{ $scanner->id }})" data-testid="scanner-delete-blocked-{{ $scanner->id }}" aria-label="Tidak dapat dihapus" title="Tidak dapat dihapus">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                                 <span class="sr-only">Tidak dapat dihapus</span>
                                             </x-admin.ui.button>
@@ -138,12 +138,12 @@
                                 <span class="sr-only">Atur Event</span>
                             </x-admin.ui.button>
                             @if ($scanner->check_in_logs_count === 0)
-                                <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $scanner->id }})" target="delete({{ $scanner->id }})" wire:confirm="Hapus scanner ini?" aria-label="Hapus scanner" title="Hapus">
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="confirmDelete({{ $scanner->id }})" target="confirmDelete({{ $scanner->id }})" aria-label="Hapus scanner" title="Hapus">
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                     <span class="sr-only">Hapus</span>
                                 </x-admin.ui.button>
                             @else
-                                <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki histori scan. Nonaktifkan scanner ini jika tidak ingin digunakan lagi." data-testid="scanner-delete-blocked-{{ $scanner->id }}" aria-label="Tidak dapat dihapus">
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="showDeleteBlocked({{ $scanner->id }})" target="showDeleteBlocked({{ $scanner->id }})" data-testid="scanner-delete-blocked-{{ $scanner->id }}" aria-label="Tidak dapat dihapus" title="Tidak dapat dihapus">
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                     <span class="sr-only">Tidak dapat dihapus</span>
                                 </x-admin.ui.button>
@@ -249,5 +249,41 @@
                 <x-admin.ui.button type="submit" target="saveEventAssignment" data-testid="scanner-assignment-submit-button">Simpan Event</x-admin.ui.button>
             </div>
         </form>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="scanner-delete-modal"
+        title="Hapus Scanner?"
+        subtitle="Data yang sudah dihapus tidak dapat dikembalikan."
+        show="showDeleteModal"
+        close-action="cancelDelete"
+        title-test-id="scanner-delete-modal-title"
+    >
+        <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+            Apakah Anda yakin ingin menghapus scanner
+            <span class="font-bold text-slate-900 dark:text-white" data-testid="scanner-delete-name">&ldquo;{{ $deletingName }}&rdquo;</span>?
+            Data yang sudah dihapus tidak dapat dikembalikan.
+        </p>
+        <div class="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="cancelDelete" data-testid="scanner-delete-cancel">Batal</x-admin.ui.button>
+            <x-admin.ui.button variant="danger" wire:click="delete({{ $deletingId }})" target="delete({{ $deletingId }})" data-testid="scanner-delete-confirm">Hapus</x-admin.ui.button>
+        </div>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="scanner-delete-blocked-modal"
+        title="Scanner Tidak Dapat Dihapus"
+        show="showDeleteBlockedModal"
+        close-action="closeDeleteBlocked"
+        title-test-id="scanner-delete-blocked-modal-title"
+    >
+        <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+            <p>Scanner ini sudah memiliki histori scan.</p>
+            <p>Data scanner harus dipertahankan agar histori check-in tetap dapat menunjukkan operator yang melakukan scan.</p>
+            <p>Gunakan opsi "Nonaktifkan Scanner".</p>
+        </div>
+        <div class="mt-5 flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="closeDeleteBlocked" data-testid="scanner-delete-blocked-close">Mengerti</x-admin.ui.button>
+        </div>
     </x-admin.ui.modal>
 </div>
