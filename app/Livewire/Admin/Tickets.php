@@ -44,7 +44,7 @@ class Tickets extends Component
     {
         $validated = $this->validate([
             'import_event_id' => ['required', 'integer', Rule::exists('events', 'id')],
-            'importFile' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+            'importFile' => ['required', 'file', 'mimes:csv,txt,xlsx', 'max:2048'],
         ]);
 
         $this->importResult = $importService->import(

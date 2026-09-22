@@ -27,8 +27,8 @@
         <x-admin.ui.card :padded="true" aria-labelledby="ticket-import-title">
             <div class="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
                 <div>
-                    <h2 id="ticket-import-title" class="text-lg font-extrabold">Import CSV</h2>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Format: qr_code,ticket_category. Pilih event sebelum upload.</p>
+                    <h2 id="ticket-import-title" class="text-lg font-extrabold">Import QR</h2>
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Terima file CSV / Excel (.xlsx). Format: qr_code,ticket_category. Pilih event sebelum upload.</p>
                 </div>
 
                 @if ($importResult)
@@ -53,10 +53,11 @@
                 </x-admin.form.select>
 
                 <x-admin.form.input
-                    label="File CSV"
+                    label="File CSV / Excel"
                     type="file"
                     id="ticket-import-file"
                     wire:model="importFile"
+                    accept=".csv,.xlsx"
                     data-testid="ticket-import-file-input"
                 />
 
