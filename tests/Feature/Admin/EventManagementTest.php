@@ -236,3 +236,133 @@ test('a manual delete request for a used event id does not bypass the business r
     expect(Event::find($used->id))->not->toBeNull()
         ->and(Event::find($unused->id))->toBeNull();
 });
+
+test('clicking delete opens the confirmation modal without deleting the event', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create(['name' => 'Festival Kota']);
+
+    Livewire::test(Events::class)
+        ->call('confirmDelete', $event->id)
+        ->assertSet('showDeleteModal', true)
+        ->assertSet('deletingId', $event->id)
+        ->assertSet('deletingName', 'Festival Kota');
+
+    expect(Event::find($event->id))->not->toBeNull();
+});
+
+test('the delete confirmation modal shows the event name and confirmation copy', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create(['name' => 'Konser Amal']);
+
+    Livewire::test(Events::class)
+        ->call('confirmDelete', $event->id)
+        ->assertSet('showDeleteModal', true)
+        ->assertSee('Hapus Event?')
+        ->assertSee('Konser Amal')
+        ->assertSee('Data yang sudah dihapus tidak dapat dikembalikan.');
+});
+
+test('cancelling the delete confirmation closes the modal and keeps the event', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+
+    Livewire::test(Events::class)
+        ->call('confirmDelete', $event->id)
+        ->call('cancelDelete')
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingId', null)
+        ->assertSet('deletingName', '');
+
+    expect(Event::find($event->id))->not->toBeNull();
+});
+
+test('confirming the modal deletes the event and closes the modal', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+
+    Livewire::test(Events::class)
+        ->call('confirmDelete', $event->id)
+        ->call('delete', $event->id)
+        ->assertHasNoErrors()
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingId', null);
+
+    expect(Event::find($event->id))->toBeNull();
+});
+
+test('opening delete for another event replaces the previous selection', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $first = Event::factory()->create(['name' => 'Event A']);
+    $second = Event::factory()->create(['name' => 'Event B']);
+
+    Livewire::test(Events::class)
+        ->call('confirmDelete', $first->id)
+        ->call('cancelDelete')
+        ->call('confirmDelete', $second->id)
+        ->assertSet('deletingId', $second->id)
+        ->assertSet('deletingName', 'Event B');
+});
+
+test('a blocked event delete opens the relation modal instead of the confirmation', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $event->id]);
+
+    Livewire::test(Events::class)
+        ->call('showDeleteBlocked', $event->id)
+        ->assertSet('showDeleteBlockedModal', true)
+        ->assertSet('showDeleteModal', false)
+        ->assertSee('Event Tidak Dapat Dihapus')
+        ->assertSee('Nonaktifkan');
+
+    expect(Event::find($event->id))->not->toBeNull();
+});
+
+test('a blocked event delete explains the ticket reason', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+    Ticket::factory()->for($category, 'ticketCategory')->create(['event_id' => $event->id]);
+
+    Livewire::test(Events::class)
+        ->call('showDeleteBlocked', $event->id)
+        ->assertSet('showDeleteBlockedModal', true)
+        ->assertSee('sudah memiliki data tiket yang terhubung');
+
+    expect(Event::find($event->id))->not->toBeNull();
+});
+
+test('a blocked event delete due to categories explains the category reason', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    TicketCategory::factory()->for($event)->create();
+
+    Livewire::test(Events::class)
+        ->call('showDeleteBlocked', $event->id)
+        ->assertSet('showDeleteBlockedModal', true)
+        ->assertSee('masih memiliki kategori tiket');
+
+    expect(Event::find($event->id))->not->toBeNull();
+});
+
+test('closing the blocked modal resets it', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    TicketCategory::factory()->for($event)->create();
+
+    Livewire::test(Events::class)
+        ->call('showDeleteBlocked', $event->id)
+        ->call('closeDeleteBlocked')
+        ->assertSet('showDeleteBlockedModal', false)
+        ->assertSet('deleteBlockedReason', '');
+});

@@ -39,6 +39,14 @@ class Scanners extends Component
 
     public bool $is_active = true;
 
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingId = null;
+
+    public string $deletingName = '';
+
+    public bool $showDeleteBlockedModal = false;
+
     public function edit(int $scannerId): void
     {
         $scanner = $this->findScanner($scannerId);
@@ -93,6 +101,47 @@ class Scanners extends Component
         }
 
         $scanner->delete();
+
+        $this->resetDeleteState();
+    }
+
+    public function confirmDelete(int $scannerId): void
+    {
+        $scanner = $this->findScanner($scannerId);
+
+        $this->closeDeleteBlocked();
+
+        $this->deletingId = $scanner->id;
+        $this->deletingName = $scanner->name;
+
+        $this->resetValidation();
+        $this->showDeleteModal = true;
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->resetDeleteState();
+    }
+
+    public function showDeleteBlocked(int $scannerId): void
+    {
+        $this->findScanner($scannerId);
+
+        $this->resetDeleteState();
+
+        $this->showDeleteBlockedModal = true;
+    }
+
+    public function closeDeleteBlocked(): void
+    {
+        $this->showDeleteBlockedModal = false;
+    }
+
+    private function resetDeleteState(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingId = null;
+        $this->deletingName = '';
     }
 
     public function assignEvent(int $scannerId): void

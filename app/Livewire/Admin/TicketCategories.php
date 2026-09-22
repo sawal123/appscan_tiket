@@ -26,6 +26,14 @@ class TicketCategories extends Component
 
     public bool $is_active = true;
 
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingId = null;
+
+    public string $deletingName = '';
+
+    public bool $showDeleteBlockedModal = false;
+
     public function create(): void
     {
         $this->resetForm();
@@ -78,6 +86,47 @@ class TicketCategories extends Component
         }
 
         $category->delete();
+
+        $this->resetDeleteState();
+    }
+
+    public function confirmDelete(int $categoryId): void
+    {
+        $category = TicketCategory::findOrFail($categoryId);
+
+        $this->closeDeleteBlocked();
+
+        $this->deletingId = $category->id;
+        $this->deletingName = $category->name;
+
+        $this->resetValidation();
+        $this->showDeleteModal = true;
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->resetDeleteState();
+    }
+
+    public function showDeleteBlocked(int $categoryId): void
+    {
+        TicketCategory::findOrFail($categoryId);
+
+        $this->resetDeleteState();
+
+        $this->showDeleteBlockedModal = true;
+    }
+
+    public function closeDeleteBlocked(): void
+    {
+        $this->showDeleteBlockedModal = false;
+    }
+
+    private function resetDeleteState(): void
+    {
+        $this->showDeleteModal = false;
+        $this->deletingId = null;
+        $this->deletingName = '';
     }
 
     public function closeModal(): void

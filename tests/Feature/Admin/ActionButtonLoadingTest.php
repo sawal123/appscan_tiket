@@ -41,7 +41,7 @@ test('target tombol per baris menyertakan id', function () {
         ->assertOk()
         ->assertSee('wire:target="edit('.$first->id.')"', false)
         ->assertSee('wire:target="edit('.$second->id.')"', false)
-        ->assertSee('wire:target="delete('.$first->id.')"', false)
+        ->assertSee('wire:target="confirmDelete('.$first->id.')"', false)
         ->assertSee('wire:target="activate('.$first->id.')"', false);
 });
 

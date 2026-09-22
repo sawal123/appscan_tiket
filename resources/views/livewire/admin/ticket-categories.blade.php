@@ -79,12 +79,12 @@
                                             <span class="sr-only">Edit</span>
                                         </x-admin.ui.button>
                                         @if ($category->tickets_count === 0)
-                                            <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $category->id }})" target="delete({{ $category->id }})" wire:confirm="Hapus kategori ini?" data-testid="delete-ticket-category-{{ $category->id }}" aria-label="Hapus kategori" title="Hapus">
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="confirmDelete({{ $category->id }})" target="confirmDelete({{ $category->id }})" data-testid="delete-ticket-category-{{ $category->id }}" aria-label="Hapus kategori" title="Hapus">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                                 <span class="sr-only">Hapus</span>
                                             </x-admin.ui.button>
                                         @else
-                                            <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki tiket. Nonaktifkan kategori ini jika tidak ingin digunakan lagi." data-testid="ticket-category-delete-blocked-{{ $category->id }}" aria-label="Tidak dapat dihapus">
+                                            <x-admin.ui.button variant="danger" size="icon" wire:click="showDeleteBlocked({{ $category->id }})" target="showDeleteBlocked({{ $category->id }})" data-testid="ticket-category-delete-blocked-{{ $category->id }}" aria-label="Tidak dapat dihapus" title="Tidak dapat dihapus">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                                 <span class="sr-only">Tidak dapat dihapus</span>
                                             </x-admin.ui.button>
@@ -126,12 +126,12 @@
                                 <span class="sr-only">Edit</span>
                             </x-admin.ui.button>
                             @if ($category->tickets_count === 0)
-                                <x-admin.ui.button variant="danger" size="icon" wire:click="delete({{ $category->id }})" target="delete({{ $category->id }})" wire:confirm="Hapus kategori ini?" aria-label="Hapus kategori" title="Hapus">
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="confirmDelete({{ $category->id }})" target="confirmDelete({{ $category->id }})" aria-label="Hapus kategori" title="Hapus">
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                     <span class="sr-only">Hapus</span>
                                 </x-admin.ui.button>
                             @else
-                                <x-admin.ui.button variant="danger" size="icon" disabled title="Tidak dapat dihapus karena sudah memiliki tiket. Nonaktifkan kategori ini jika tidak ingin digunakan lagi." data-testid="ticket-category-delete-blocked-{{ $category->id }}" aria-label="Tidak dapat dihapus">
+                                <x-admin.ui.button variant="danger" size="icon" wire:click="showDeleteBlocked({{ $category->id }})" target="showDeleteBlocked({{ $category->id }})" data-testid="ticket-category-delete-blocked-{{ $category->id }}" aria-label="Tidak dapat dihapus" title="Tidak dapat dihapus">
                                     <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                                     <span class="sr-only">Tidak dapat dihapus</span>
                                 </x-admin.ui.button>
@@ -181,5 +181,41 @@
                 <x-admin.ui.button type="submit" target="save" data-testid="ticket-category-submit-button">Simpan</x-admin.ui.button>
             </div>
         </form>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="ticket-category-delete-modal"
+        title="Hapus Kategori?"
+        subtitle="Data yang sudah dihapus tidak dapat dikembalikan."
+        show="showDeleteModal"
+        close-action="cancelDelete"
+        title-test-id="ticket-category-delete-modal-title"
+    >
+        <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+            Apakah Anda yakin ingin menghapus kategori
+            <span class="font-bold text-slate-900 dark:text-white" data-testid="ticket-category-delete-name">&ldquo;{{ $deletingName }}&rdquo;</span>?
+            Data yang sudah dihapus tidak dapat dikembalikan.
+        </p>
+        <div class="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="cancelDelete" data-testid="ticket-category-delete-cancel">Batal</x-admin.ui.button>
+            <x-admin.ui.button variant="danger" wire:click="delete({{ $deletingId }})" target="delete({{ $deletingId }})" data-testid="ticket-category-delete-confirm">Hapus</x-admin.ui.button>
+        </div>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="ticket-category-delete-blocked-modal"
+        title="Kategori Tidak Dapat Dihapus"
+        show="showDeleteBlockedModal"
+        close-action="closeDeleteBlocked"
+        title-test-id="ticket-category-delete-blocked-modal-title"
+    >
+        <div class="mt-4 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+            <p>Kategori ini sudah memiliki tiket yang terhubung.</p>
+            <p>Kategori tidak dapat dihapus agar data tiket tetap valid.</p>
+            <p>Gunakan opsi "Nonaktifkan".</p>
+        </div>
+        <div class="mt-5 flex justify-end border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="closeDeleteBlocked" data-testid="ticket-category-delete-blocked-close">Mengerti</x-admin.ui.button>
+        </div>
     </x-admin.ui.modal>
 </div>

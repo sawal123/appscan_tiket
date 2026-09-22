@@ -106,9 +106,8 @@
                         <p class="text-sm font-bold text-blue-700 dark:text-blue-300"><span data-testid="ticket-selected-count">{{ count($selectedTicketIds) }}</span> tiket terpilih</p>
                         <x-admin.ui.button
                             variant="danger"
-                            wire:click="bulkDelete"
-                            wire:confirm="Hapus tiket terpilih?"
-                            target="bulkDelete"
+                            wire:click="confirmBulkDelete"
+                            target="confirmBulkDelete"
                             data-testid="ticket-bulk-delete-button"
                         >
                             Hapus Terpilih
@@ -209,7 +208,7 @@
                                             <x-admin.ui.button variant="outline" size="icon" wire:click="edit({{ $ticket->id }})" target="edit({{ $ticket->id }})" data-testid="ticket-edit-{{ $ticket->id }}" aria-label="Edit" title="Edit">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L7 21H3v-4L16.5 3.5Z"/></svg>
                                             </x-admin.ui.button>
-                                            <x-admin.ui.button variant="outline" size="icon" wire:click="deleteTicket({{ $ticket->id }})" wire:confirm="Hapus tiket ini?" target="deleteTicket({{ $ticket->id }})" data-testid="ticket-delete-{{ $ticket->id }}" aria-label="Hapus" title="Hapus">
+                                            <x-admin.ui.button variant="outline" size="icon" wire:click="confirmDeleteTicket({{ $ticket->id }})" target="confirmDeleteTicket({{ $ticket->id }})" data-testid="ticket-delete-{{ $ticket->id }}" aria-label="Hapus" title="Hapus">
                                                 <svg aria-hidden="true" class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/></svg>
                                             </x-admin.ui.button>
                                         </div>
@@ -258,7 +257,7 @@
                         @if ($canManage)
                             <div class="flex gap-2">
                                 <x-admin.ui.button variant="outline" wire:click="edit({{ $ticket->id }})" target="edit({{ $ticket->id }})">Edit</x-admin.ui.button>
-                                <x-admin.ui.button variant="outline" wire:click="deleteTicket({{ $ticket->id }})" wire:confirm="Hapus tiket ini?" target="deleteTicket({{ $ticket->id }})">Hapus</x-admin.ui.button>
+                                <x-admin.ui.button variant="outline" wire:click="confirmDeleteTicket({{ $ticket->id }})" target="confirmDeleteTicket({{ $ticket->id }})">Hapus</x-admin.ui.button>
                             </div>
                         @endif
                     </article>
@@ -302,5 +301,43 @@
                 <x-admin.ui.button type="submit" target="saveEdit" data-testid="ticket-edit-save-button">Simpan</x-admin.ui.button>
             </div>
         </form>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="ticket-delete-modal"
+        title="Hapus Tiket?"
+        subtitle="Data yang sudah dihapus tidak dapat dikembalikan."
+        show="showDeleteModal"
+        close-action="cancelDeleteTicket"
+        title-test-id="ticket-delete-modal-title"
+    >
+        <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+            Apakah Anda yakin ingin menghapus tiket
+            <span class="font-bold text-slate-900 dark:text-white" data-testid="ticket-delete-name">&ldquo;{{ $deletingTicketLabel }}&rdquo;</span>?
+            Data yang sudah dihapus tidak dapat dikembalikan.
+        </p>
+        <div class="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="cancelDeleteTicket" data-testid="ticket-delete-cancel">Batal</x-admin.ui.button>
+            <x-admin.ui.button variant="danger" wire:click="deleteTicket({{ $deletingTicketId }})" target="deleteTicket({{ $deletingTicketId }})" data-testid="ticket-delete-confirm">Hapus</x-admin.ui.button>
+        </div>
+    </x-admin.ui.modal>
+
+    <x-admin.ui.modal
+        id="ticket-bulk-delete-modal"
+        title="Hapus Tiket Terpilih?"
+        subtitle="Data yang sudah dihapus tidak dapat dikembalikan."
+        show="showBulkDeleteModal"
+        close-action="cancelBulkDelete"
+        title-test-id="ticket-bulk-delete-modal-title"
+    >
+        <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
+            Apakah Anda yakin ingin menghapus
+            <span class="font-bold text-slate-900 dark:text-white" data-testid="ticket-bulk-delete-count">{{ count($selectedTicketIds) }}</span>
+            tiket terpilih? Data yang sudah dihapus tidak dapat dikembalikan.
+        </p>
+        <div class="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+            <x-admin.ui.button variant="outline" wire:click="cancelBulkDelete" data-testid="ticket-bulk-delete-cancel">Batal</x-admin.ui.button>
+            <x-admin.ui.button variant="danger" wire:click="bulkDelete" target="bulkDelete" data-testid="ticket-bulk-delete-confirm">Hapus</x-admin.ui.button>
+        </div>
     </x-admin.ui.modal>
 </div>

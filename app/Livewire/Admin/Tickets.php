@@ -53,6 +53,14 @@ class Tickets extends Component
 
     public ?string $ticketActionMessage = null;
 
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingTicketId = null;
+
+    public string $deletingTicketLabel = '';
+
+    public bool $showBulkDeleteModal = false;
+
     /**
      * @var array{success: int, failed: int, errors: array<int, string>}|null
      */
@@ -182,6 +190,46 @@ class Tickets extends Component
         $this->ticketActionMessage = 'Tiket berhasil diperbarui.';
     }
 
+    public function confirmDeleteTicket(int $ticketId): void
+    {
+        $ticket = Ticket::query()
+            ->whereKey($ticketId)
+            ->whereNull('checked_in_at')
+            ->first();
+
+        if (! $ticket) {
+            $this->ticketActionMessage = 'Tiket yang sudah check-in tidak dapat dihapus.';
+
+            return;
+        }
+
+        $this->showBulkDeleteModal = false;
+
+        $this->deletingTicketId = $ticket->id;
+        $this->deletingTicketLabel = $ticket->qr_code;
+        $this->showDeleteModal = true;
+    }
+
+    public function cancelDeleteTicket(): void
+    {
+        $this->resetDeleteState();
+    }
+
+    public function confirmBulkDelete(): void
+    {
+        if (count($this->selectedTicketIds) === 0) {
+            return;
+        }
+
+        $this->resetDeleteState();
+        $this->showBulkDeleteModal = true;
+    }
+
+    public function cancelBulkDelete(): void
+    {
+        $this->resetDeleteState();
+    }
+
     public function deleteTicket(int $ticketId): void
     {
         $deleted = Ticket::query()
@@ -190,6 +238,7 @@ class Tickets extends Component
             ->delete();
 
         $this->resetSelection();
+        $this->resetDeleteState();
         $this->ticketActionMessage = $deleted > 0
             ? 'Tiket berhasil dihapus.'
             : 'Tiket yang sudah check-in tidak dapat dihapus.';
@@ -201,6 +250,7 @@ class Tickets extends Component
 
         if ($selectedIds === []) {
             $this->resetSelection();
+            $this->resetDeleteState();
             $this->ticketActionMessage = 'Tidak ada tiket valid yang dapat dihapus.';
 
             return;
@@ -212,9 +262,18 @@ class Tickets extends Component
             ->delete();
 
         $this->resetSelection();
+        $this->resetDeleteState();
         $this->ticketActionMessage = $deleted > 0
             ? "{$deleted} tiket berhasil dihapus."
             : 'Tidak ada tiket valid yang dapat dihapus.';
+    }
+
+    private function resetDeleteState(): void
+    {
+        $this->showDeleteModal = false;
+        $this->showBulkDeleteModal = false;
+        $this->deletingTicketId = null;
+        $this->deletingTicketLabel = '';
     }
 
     public function closeEditModal(): void
