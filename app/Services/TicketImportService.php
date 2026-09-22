@@ -5,27 +5,25 @@ namespace App\Services;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use ZipArchive;
 
 class TicketImportService
 {
+    private const INSERT_CHUNK_SIZE = 1000;
+
     /**
      * @return array{success: int, failed: int, errors: array<int, string>}
      */
-    public function import(int $eventId, UploadedFile|string $csvFile, ?User $registeredBy = null): array
+    public function import(int $eventId, UploadedFile|string $file, ?User $registeredBy = null): array
     {
-        $path = $csvFile instanceof UploadedFile ? $csvFile->getRealPath() : $csvFile;
+        $path = $file instanceof UploadedFile ? $file->getRealPath() : $file;
 
         if (! $path || ! is_readable($path)) {
-            throw new RuntimeException('File CSV tidak dapat dibaca.');
-        }
-
-        $handle = fopen($path, 'r');
-
-        if ($handle === false) {
-            throw new RuntimeException('File CSV tidak dapat dibuka.');
+            throw new RuntimeException('File import tidak dapat dibaca.');
         }
 
         $result = [
@@ -34,85 +32,242 @@ class TicketImportService
             'errors' => [],
         ];
 
-        try {
-            $header = fgetcsv($handle);
+        $rows = $this->readRows($path, $this->extensionFor($file));
+        $header = array_shift($rows);
 
-            if ($this->invalidHeader($header)) {
-                return [
-                    'success' => 0,
-                    'failed' => 1,
-                    'errors' => ['Header CSV harus: qr_code,ticket_category'],
-                ];
-            }
-
-            $categories = TicketCategory::query()
-                ->where('event_id', $eventId)
-                ->get()
-                ->keyBy(fn (TicketCategory $category): string => $this->normalizeCategory($category->name));
-
-            $seenQrCodes = [];
-            $rowNumber = 1;
-
-            while (($row = fgetcsv($handle)) !== false) {
-                $rowNumber++;
-
-                if ($this->isBlankRow($row)) {
-                    continue;
-                }
-
-                $qrCode = Ticket::normalizeQrCode((string) ($row[0] ?? ''));
-                $categoryName = trim((string) ($row[1] ?? ''));
-                $category = $categories->get($this->normalizeCategory($categoryName));
-
-                if ($qrCode === '') {
-                    $this->fail($result, $rowNumber, 'QR kosong.');
-
-                    continue;
-                }
-
-                if (isset($seenQrCodes[$qrCode])) {
-                    $this->fail($result, $rowNumber, "QR {$qrCode} duplicate di CSV.");
-
-                    continue;
-                }
-
-                $seenQrCodes[$qrCode] = true;
-
-                if (! $category) {
-                    $this->fail($result, $rowNumber, "Kategori {$categoryName} tidak valid untuk event ini.");
-
-                    continue;
-                }
-
-                if ($this->qrCodeExists($qrCode)) {
-                    $this->fail($result, $rowNumber, "QR {$qrCode} sudah terdaftar.");
-
-                    continue;
-                }
-
-                DB::transaction(function () use ($eventId, $category, $qrCode, $registeredBy): void {
-                    Ticket::create([
-                        'event_id' => $eventId,
-                        'ticket_category_id' => $category->id,
-                        'code' => $qrCode,
-                        'qr_code' => $qrCode,
-                        'status' => Ticket::STATUS_REGISTERED,
-                        'registered_at' => now(),
-                        'registered_by' => $registeredBy?->id,
-                    ]);
-                });
-
-                $result['success']++;
-            }
-        } finally {
-            fclose($handle);
+        if ($this->invalidHeader($header)) {
+            return [
+                'success' => 0,
+                'failed' => 1,
+                'errors' => ['Header file harus: qr_code,ticket_category'],
+            ];
         }
+
+        $categories = TicketCategory::query()
+            ->where('event_id', $eventId)
+            ->get()
+            ->keyBy(fn (TicketCategory $category): string => $this->normalizeCategory($category->name));
+
+        $seenQrCodes = [];
+        $candidates = [];
+
+        foreach ($rows as $index => $row) {
+            $rowNumber = $index + 2;
+
+            if ($this->isBlankRow($row)) {
+                continue;
+            }
+
+            $qrCode = Ticket::normalizeQrCode((string) ($row[0] ?? ''));
+            $categoryName = trim((string) ($row[1] ?? ''));
+            $category = $categories->get($this->normalizeCategory($categoryName));
+
+            if ($qrCode === '') {
+                $this->fail($result, $rowNumber, 'QR kosong.');
+
+                continue;
+            }
+
+            if (isset($seenQrCodes[$qrCode])) {
+                $this->fail($result, $rowNumber, "QR {$qrCode} duplicate di file.");
+
+                continue;
+            }
+
+            $seenQrCodes[$qrCode] = true;
+
+            if (! $category) {
+                $this->fail($result, $rowNumber, "Kategori {$categoryName} tidak valid untuk event ini.");
+
+                continue;
+            }
+
+            $candidates[] = [
+                'row' => $rowNumber,
+                'qr_code' => $qrCode,
+                'ticket_category_id' => $category->id,
+            ];
+        }
+
+        $existingQrCodes = $this->existingQrCodes(array_column($candidates, 'qr_code'));
+        $now = now();
+        $inserts = [];
+
+        foreach ($candidates as $candidate) {
+            if (isset($existingQrCodes[$candidate['qr_code']])) {
+                $this->fail($result, $candidate['row'], "QR {$candidate['qr_code']} sudah terdaftar.");
+
+                continue;
+            }
+
+            $inserts[] = [
+                'event_id' => $eventId,
+                'ticket_category_id' => $candidate['ticket_category_id'],
+                'code' => $candidate['qr_code'],
+                'qr_code' => $candidate['qr_code'],
+                'status' => Ticket::STATUS_REGISTERED,
+                'registered_at' => $now,
+                'registered_by' => $registeredBy?->id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        $result['success'] = $this->insertTickets($inserts);
 
         return $result;
     }
 
     /**
-     * @param  array<int, string>|false|null  $header
+     * @return array<int, array<int, string|null>>
+     */
+    private function readRows(string $path, string $extension): array
+    {
+        return match ($extension) {
+            'csv', 'txt' => $this->readCsvRows($path),
+            'xlsx' => $this->readXlsxRows($path),
+            default => throw new RuntimeException('Format file import tidak didukung.'),
+        };
+    }
+
+    /**
+     * @return array<int, array<int, string|null>>
+     */
+    private function readCsvRows(string $path): array
+    {
+        $handle = fopen($path, 'r');
+
+        if ($handle === false) {
+            throw new RuntimeException('File CSV tidak dapat dibuka.');
+        }
+
+        $rows = [];
+
+        try {
+            while (($row = fgetcsv($handle)) !== false) {
+                $rows[] = $row;
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array<int, array<int, string|null>>
+     */
+    private function readXlsxRows(string $path): array
+    {
+        $zip = new ZipArchive;
+
+        if ($zip->open($path) !== true) {
+            throw new RuntimeException('File Excel tidak dapat dibuka.');
+        }
+
+        try {
+            $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+
+            if ($sheetXml === false) {
+                throw new RuntimeException('Sheet pertama Excel tidak ditemukan.');
+            }
+
+            $sharedStrings = $this->readSharedStrings($zip);
+        } finally {
+            $zip->close();
+        }
+
+        $sheet = simplexml_load_string($sheetXml);
+
+        if ($sheet === false) {
+            throw new RuntimeException('Sheet Excel tidak valid.');
+        }
+
+        $rows = [];
+
+        foreach ($sheet->sheetData->row as $sheetRow) {
+            $row = [];
+
+            foreach ($sheetRow->c as $cell) {
+                $attributes = $cell->attributes();
+                $columnIndex = $this->columnIndex((string) ($attributes['r'] ?? ''));
+                $row[$columnIndex] = $this->cellValue($cell, (string) ($attributes['t'] ?? ''), $sharedStrings);
+            }
+
+            ksort($row);
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function readSharedStrings(ZipArchive $zip): array
+    {
+        $xml = $zip->getFromName('xl/sharedStrings.xml');
+
+        if ($xml === false) {
+            return [];
+        }
+
+        $sharedStrings = simplexml_load_string($xml);
+
+        if ($sharedStrings === false) {
+            return [];
+        }
+
+        $values = [];
+
+        foreach ($sharedStrings->si as $item) {
+            $text = '';
+
+            if (isset($item->t)) {
+                $text = (string) $item->t;
+            } else {
+                foreach ($item->r as $run) {
+                    $text .= (string) $run->t;
+                }
+            }
+
+            $values[] = $text;
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param  array<int, string>  $sharedStrings
+     */
+    private function cellValue(\SimpleXMLElement $cell, string $type, array $sharedStrings): ?string
+    {
+        if ($type === 's') {
+            return $sharedStrings[(int) $cell->v] ?? '';
+        }
+
+        if ($type === 'inlineStr') {
+            return isset($cell->is->t) ? (string) $cell->is->t : '';
+        }
+
+        return isset($cell->v) ? (string) $cell->v : null;
+    }
+
+    private function columnIndex(string $cellReference): int
+    {
+        preg_match('/^[A-Z]+/i', $cellReference, $matches);
+        $letters = strtoupper($matches[0] ?? 'A');
+        $index = 0;
+
+        foreach (str_split($letters) as $letter) {
+            $index = ($index * 26) + (ord($letter) - 64);
+        }
+
+        return max(0, $index - 1);
+    }
+
+    /**
+     * @param  array<int, string|null>|false|null  $header
      */
     private function invalidHeader(array|false|null $header): bool
     {
@@ -137,12 +292,65 @@ class TicketImportService
         return mb_strtolower(trim($name));
     }
 
-    private function qrCodeExists(string $qrCode): bool
+    /**
+     * @param  array<int, string>  $qrCodes
+     * @return array<string, true>
+     */
+    private function existingQrCodes(array $qrCodes): array
     {
-        return Ticket::query()
-            ->where('qr_code', $qrCode)
-            ->orWhere('code', $qrCode)
-            ->exists();
+        if ($qrCodes === []) {
+            return [];
+        }
+
+        $existing = [];
+
+        foreach (array_chunk(array_values(array_unique($qrCodes)), self::INSERT_CHUNK_SIZE) as $chunk) {
+            Ticket::query()
+                ->whereIn('qr_code', $chunk)
+                ->orWhereIn('code', $chunk)
+                ->get(['qr_code', 'code'])
+                ->each(function (Ticket $ticket) use (&$existing): void {
+                    $existing[$ticket->qr_code] = true;
+                    $existing[$ticket->code] = true;
+                });
+        }
+
+        return $existing;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $tickets
+     */
+    private function insertTickets(array $tickets): int
+    {
+        $success = 0;
+
+        foreach (array_chunk($tickets, self::INSERT_CHUNK_SIZE) as $chunk) {
+            try {
+                DB::table('tickets')->insert($chunk);
+                $success += count($chunk);
+            } catch (QueryException) {
+                foreach ($chunk as $ticket) {
+                    try {
+                        DB::table('tickets')->insert($ticket);
+                        $success++;
+                    } catch (QueryException) {
+                        //
+                    }
+                }
+            }
+        }
+
+        return $success;
+    }
+
+    private function extensionFor(UploadedFile|string $file): string
+    {
+        $extension = $file instanceof UploadedFile
+            ? ($file->getClientOriginalExtension() ?: $file->extension())
+            : pathinfo($file, PATHINFO_EXTENSION);
+
+        return mb_strtolower($extension);
     }
 
     /**
