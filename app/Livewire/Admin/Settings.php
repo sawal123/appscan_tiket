@@ -48,6 +48,7 @@ class Settings extends Component
         $settings->set('app.name', $validated['appName']);
         $settings->set('scanner.success_timeout', (string) $validated['scannerSuccessTimeout']);
         $settings->set('system.timezone', $validated['systemTimezone']);
+        $settings->applyTimezone();
 
         session()->flash('settingsSaved', 'Pengaturan berhasil disimpan.');
     }
