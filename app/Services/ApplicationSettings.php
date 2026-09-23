@@ -59,4 +59,16 @@ class ApplicationSettings
             ['value' => $value, 'type' => $type],
         );
     }
+
+    public function applyTimezone(): void
+    {
+        $timezone = $this->get('system.timezone') ?? config('app.timezone', 'Asia/Jakarta');
+
+        if (! in_array($timezone, timezone_identifiers_list(), true)) {
+            $timezone = config('app.timezone', 'Asia/Jakarta');
+        }
+
+        config(['app.timezone' => $timezone]);
+        date_default_timezone_set($timezone);
+    }
 }
