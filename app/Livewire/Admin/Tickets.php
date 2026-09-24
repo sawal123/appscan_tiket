@@ -13,13 +13,16 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use Livewire\WithFileUploads;\nuse Livewire\WithPagination;
+use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 #[Layout('layouts.admin')]
 #[Title('Tiket')]
 class Tickets extends Component
 {
-    use WithFileUploads, WithPagination;\n\n    public int $perPage = 50;
+    use WithFileUploads, WithPagination;
+
+    public int $perPage = 50;
 
     public string $search = '';
 
@@ -70,11 +73,13 @@ class Tickets extends Component
     {
         $this->categoryFilter = null;
         $this->resetSelection();
+        $this->resetPage();
     }
 
     public function updatedCategoryFilter(): void
     {
         $this->resetSelection();
+        $this->resetPage();
     }
 
     public function updatedSearch(): void
