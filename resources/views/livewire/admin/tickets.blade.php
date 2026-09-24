@@ -93,7 +93,7 @@
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h2 id="ticket-list-title" class="text-lg font-extrabold">Semua Tiket</h2>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $tickets->count() }} tiket ditampilkan</p>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $tickets->total() }} tiket total · Halaman {{ $tickets->currentPage() }} dari {{ $tickets->lastPage() }}</p>
                     </div>
                 </div>
 
@@ -265,6 +265,16 @@
                     <p class="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">Belum ada tiket.</p>
                 @endforelse
             </div>
+        @if ($tickets->hasPages())
+            <div class="flex flex-col gap-3 border-t border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800" data-testid="ticket-pagination">
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    Menampilkan {{ $tickets->firstItem() }}–{{ $tickets->lastItem() }} dari {{ $tickets->total() }} tiket
+                </p>
+                <div>
+                    {{ $tickets->links() }}
+                </div>
+            </div>
+        @endif
         </x-admin.ui.card>
     </div>
 
