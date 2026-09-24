@@ -16,6 +16,49 @@ use ZipArchive;
 
 uses(TestCase::class, RefreshDatabase::class);
 
+test('ticket list paginates instead of rendering all rows', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+
+    $baseCreatedAt = now()->subMinutes(120);
+
+    for ($i = 1; $i <= 120; $i++) {
+        managedTicket($event, $category, 'PAGE'.str_pad((string) $i, 4, '0', STR_PAD_LEFT), [
+            'created_at' => $baseCreatedAt->copy()->addMinutes($i),
+            'updated_at' => $baseCreatedAt->copy()->addMinutes($i),
+        ]);
+    }
+
+    Livewire::test(Tickets::class)
+        ->assertSee('120 tiket total')
+        ->assertSee('Halaman 1 dari 3')
+        ->assertSee('PAGE0120')
+        ->assertDontSee('PAGE0001')
+        ->call('gotoPage', 3)
+        ->assertSee('PAGE0001')
+        ->assertDontSee('PAGE0120');
+});
+
+test('ticket search resets pagination and only renders matching page', function () {
+    $this->actingAs(User::factory()->admin()->create());
+
+    $event = Event::factory()->create();
+    $category = TicketCategory::factory()->for($event)->create();
+
+    for ($i = 1; $i <= 60; $i++) {
+        managedTicket($event, $category, 'SEARCH'.str_pad((string) $i, 4, '0', STR_PAD_LEFT));
+    }
+
+    Livewire::test(Tickets::class)
+        ->call('gotoPage', 2)
+        ->set('search', 'SEARCH0001')
+        ->assertSee('SEARCH0001')
+        ->assertSee('Halaman 1 dari 1')
+        ->assertDontSee('SEARCH0060');
+});
+
 test('guest tidak akses tickets', function () {
     $this->get(route('admin.tickets'))->assertRedirect(route('login'));
 });

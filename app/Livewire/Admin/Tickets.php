@@ -14,12 +14,15 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 #[Layout('layouts.admin')]
 #[Title('Tiket')]
 class Tickets extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, WithPagination;
+
+    public int $perPage = 50;
 
     public string $search = '';
 
@@ -70,21 +73,24 @@ class Tickets extends Component
     {
         $this->categoryFilter = null;
         $this->resetSelection();
+        $this->resetPage();
     }
 
     public function updatedCategoryFilter(): void
     {
         $this->resetSelection();
+        $this->resetPage();
     }
 
     public function updatedSearch(): void
     {
         $this->resetSelection();
+        $this->resetPage();
     }
 
     public function updatedSelectedTicketIds(): void
     {
-        $eligibleIds = array_flip($this->displayedEligibleTicketIds());
+        $eligibleIds = array_flip($this->currentPageEligibleTicketIds());
 
         $this->selectedTicketIds = array_values(array_filter(
             array_map('intval', $this->selectedTicketIds),
@@ -97,7 +103,7 @@ class Tickets extends Component
 
     public function updatedSelectAllDisplayed(bool $selected): void
     {
-        $this->selectedTicketIds = $selected ? $this->displayedEligibleTicketIds() : [];
+        $this->selectedTicketIds = $selected ? $this->currentPageEligibleTicketIds() : [];
     }
 
     public function import(TicketImportService $importService): void
@@ -297,7 +303,7 @@ class Tickets extends Component
                 ->get(),
             'tickets' => $this->ticketsQuery()
                 ->latest()
-                ->get(),
+                ->paginate($this->perPage),
         ])->layoutData([
             'topbarTitle' => 'Tiket',
             'topbarSubtitle' => 'Registrasi tiket manual dan import QR',
@@ -312,7 +318,7 @@ class Tickets extends Component
         return Ticket::query()
             ->with(['event', 'ticketCategory', 'registeredBy'])
             ->when($this->search !== '', function (Builder $query): void {
-                $search = '%'.Ticket::normalizeQrCode($this->search).'%';
+                $search = Ticket::normalizeQrCode($this->search).'%';
 
                 $query->where(function (Builder $query) use ($search): void {
                     $query->where('qr_code', 'like', $search)->orWhere('code', 'like', $search);
@@ -325,10 +331,12 @@ class Tickets extends Component
     /**
      * @return array<int, int>
      */
-    private function displayedEligibleTicketIds(): array
+    private function currentPageEligibleTicketIds(): array
     {
         return $this->ticketsQuery()
             ->whereNull('checked_in_at')
+            ->latest()
+            ->forPage($this->getPage(), $this->perPage)
             ->pluck('id')
             ->map(fn (int|string $ticketId): int => (int) $ticketId)
             ->all();
@@ -339,12 +347,21 @@ class Tickets extends Component
      */
     private function eligibleSelectedTicketIds(): array
     {
-        $displayedEligibleIds = array_flip($this->displayedEligibleTicketIds());
-
-        return array_values(array_filter(
+        $selectedIds = array_values(array_filter(
             array_map('intval', $this->selectedTicketIds),
-            fn (int $ticketId): bool => isset($displayedEligibleIds[$ticketId]),
+            fn (int $ticketId): bool => $ticketId > 0,
         ));
+
+        if ($selectedIds === []) {
+            return [];
+        }
+
+        return Ticket::query()
+            ->whereIn('id', $selectedIds)
+            ->whereNull('checked_in_at')
+            ->pluck('id')
+            ->map(fn (int|string $ticketId): int => (int) $ticketId)
+            ->all();
     }
 
     private function resetSelection(): void
