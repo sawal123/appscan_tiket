@@ -347,12 +347,21 @@ class Tickets extends Component
      */
     private function eligibleSelectedTicketIds(): array
     {
-        $displayedEligibleIds = array_flip($this->currentPageEligibleTicketIds());
-
-        return array_values(array_filter(
+        $selectedIds = array_values(array_filter(
             array_map('intval', $this->selectedTicketIds),
-            fn (int $ticketId): bool => isset($displayedEligibleIds[$ticketId]),
+            fn (int $ticketId): bool => $ticketId > 0,
         ));
+
+        if ($selectedIds === []) {
+            return [];
+        }
+
+        return Ticket::query()
+            ->whereIn('id', $selectedIds)
+            ->whereNull('checked_in_at')
+            ->pluck('id')
+            ->map(fn (int|string $ticketId): int => (int) $ticketId)
+            ->all();
     }
 
     private function resetSelection(): void
