@@ -22,8 +22,13 @@ test('ticket list paginates instead of rendering all rows', function () {
     $event = Event::factory()->create();
     $category = TicketCategory::factory()->for($event)->create();
 
+    $baseCreatedAt = now()->subMinutes(120);
+
     for ($i = 1; $i <= 120; $i++) {
-        managedTicket($event, $category, 'PAGE'.str_pad((string) $i, 4, '0', STR_PAD_LEFT));
+        managedTicket($event, $category, 'PAGE'.str_pad((string) $i, 4, '0', STR_PAD_LEFT), [
+            'created_at' => $baseCreatedAt->copy()->addMinutes($i),
+            'updated_at' => $baseCreatedAt->copy()->addMinutes($i),
+        ]);
     }
 
     Livewire::test(Tickets::class)
@@ -32,7 +37,8 @@ test('ticket list paginates instead of rendering all rows', function () {
         ->assertSee('PAGE0120')
         ->assertDontSee('PAGE0001')
         ->call('gotoPage', 3)
-        ->assertSee('PAGE0001');
+        ->assertSee('PAGE0001')
+        ->assertDontSee('PAGE0120');
 });
 
 test('ticket search resets pagination and only renders matching page', function () {

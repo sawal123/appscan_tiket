@@ -271,7 +271,7 @@
                     Menampilkan {{ $tickets->firstItem() }}–{{ $tickets->lastItem() }} dari {{ $tickets->total() }} tiket
                 </p>
                 <div>
-                    {{ $tickets->links() }}
+                    {{ $tickets->links(data: ['scrollTo' => false]) }}
                 </div>
             </div>
         @endif

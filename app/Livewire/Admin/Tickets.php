@@ -103,7 +103,7 @@ class Tickets extends Component
 
     public function updatedSelectAllDisplayed(bool $selected): void
     {
-        $this->selectedTicketIds = $selected ? $this->displayedEligibleTicketIds() : [];
+        $this->selectedTicketIds = $selected ? $this->currentPageEligibleTicketIds() : [];
     }
 
     public function import(TicketImportService $importService): void
